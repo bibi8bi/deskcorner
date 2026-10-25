@@ -1,0 +1,264 @@
+{
+  "exercises": [
+    {
+      "id": "A1",
+      "name": "腹式呼吸",
+      "display_name": "腹式呼吸",
+      "category": "seated",
+      "tip": "吸 4 秒肚子鼓,呼 6 秒肚子收",
+      "mode": "reps",
+      "reps": 5,
+      "seconds_per_rep": 10,
+      "animation": "belly_breath",
+      "targets": [
+        "胃胀",
+        "放松"
+      ]
+    },
+    {
+      "id": "A2",
+      "name": "盆底肌收缩",
+      "display_name": "呼吸收紧",
+      "category": "seated",
+      "tip": "呼气时轻轻向上收,吸气时放松",
+      "mode": "reps",
+      "reps": 5,
+      "seconds_per_rep": 10,
+      "hold_seconds_by_week": {
+        "1-2": 3,
+        "3-4": 5,
+        "5+": 8
+      },
+      "animation": "breath_lift",
+      "targets": [
+        "盆底肌"
+      ],
+      "private": true
+    },
+    {
+      "id": "A3",
+      "name": "骨盆前后摇",
+      "display_name": "骨盆前后摇",
+      "category": "seated",
+      "tip": "慢慢来回,只动骨盆不动肩",
+      "mode": "reps",
+      "reps": 10,
+      "seconds_per_rep": 4,
+      "animation": "pelvic_tilt",
+      "targets": [
+        "腰酸"
+      ]
+    },
+    {
+      "id": "A4",
+      "name": "坐姿转体",
+      "display_name": "坐姿转体",
+      "category": "seated",
+      "tip": "坐直转身,停 3 次呼吸,换边",
+      "mode": "reps",
+      "reps": 2,
+      "seconds_per_rep": 15,
+      "rep_unit": "边",
+      "animation": "seated_twist",
+      "targets": [
+        "腰酸",
+        "胃肠蠕动"
+      ]
+    },
+    {
+      "id": "A5",
+      "name": "转脚踝 + 踮脚",
+      "display_name": "转脚踝 + 踮脚",
+      "category": "seated",
+      "tip": "顺逆各转 10 圈,再踮脚 20 次",
+      "mode": "timer",
+      "seconds": 60,
+      "animation": "ankle_circle",
+      "targets": [
+        "腿部循环"
+      ]
+    },
+    {
+      "id": "A6",
+      "name": "搓腰",
+      "display_name": "搓腰",
+      "category": "seated",
+      "tip": "双手搓热,贴后腰上下搓到发热",
+      "mode": "timer",
+      "seconds": 45,
+      "animation": "back_rub",
+      "targets": [
+        "腰酸"
+      ]
+    },
+    {
+      "id": "A7",
+      "name": "拍打大腿外侧",
+      "display_name": "拍打大腿外侧",
+      "category": "seated",
+      "tip": "空拳从髋敲到膝,力度适中",
+      "mode": "timer",
+      "seconds": 60,
+      "animation": "thigh_tap",
+      "targets": [
+        "腿部放松",
+        "提神"
+      ]
+    },
+    {
+      "id": "B1",
+      "name": "站立后仰",
+      "display_name": "站立后仰",
+      "category": "standing",
+      "tip": "托住腰,慢慢后仰,别猛",
+      "mode": "reps",
+      "reps": 5,
+      "seconds_per_rep": 6,
+      "animation": "standing_backbend",
+      "targets": [
+        "腰酸"
+      ]
+    },
+    {
+      "id": "B2",
+      "name": "夹臀",
+      "display_name": "夹臀",
+      "category": "standing",
+      "tip": "夹紧 5 秒,放松",
+      "mode": "reps",
+      "reps": 10,
+      "seconds_per_rep": 7,
+      "animation": "glute_squeeze",
+      "targets": [
+        "唤醒臀肌",
+        "减轻腰负担"
+      ]
+    },
+    {
+      "id": "B3",
+      "name": "走动",
+      "display_name": "走动",
+      "category": "standing",
+      "tip": "去倒杯水、走几十步",
+      "mode": "timer",
+      "seconds": 60,
+      "animation": "march",
+      "targets": [
+        "循环",
+        "胃胀"
+      ]
+    },
+    {
+      "id": "C1",
+      "name": "顺时针揉腹",
+      "display_name": "顺时针揉腹",
+      "category": "after_meal",
+      "tip": "顺时针、轻柔,刚吃饱力度更轻",
+      "mode": "reps",
+      "reps": 40,
+      "seconds_per_rep": 2,
+      "rep_unit": "圈",
+      "animation": "belly_circle",
+      "targets": [
+        "胃胀"
+      ]
+    },
+    {
+      "id": "C2",
+      "name": "按足三里",
+      "display_name": "按足三里",
+      "category": "after_meal",
+      "tip": "膝盖外下方四指、胫骨外一横指,按到酸胀",
+      "mode": "reps",
+      "reps": 2,
+      "seconds_per_rep": 60,
+      "rep_unit": "侧",
+      "animation": "acupoint_press",
+      "targets": [
+        "胃胀"
+      ]
+    }
+  ],
+  "scenes": [
+    {
+      "id": "S1",
+      "display_name": "定时一组",
+      "rule": "工作时段里每 50 分钟一次",
+      "trigger": {
+        "type": "interval",
+        "minutes": 50
+      },
+      "sequence": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5"
+      ]
+    },
+    {
+      "id": "S2",
+      "display_name": "站起来一组",
+      "rule": "定时那组每到第 3 轮换成这组",
+      "trigger": {
+        "type": "interval",
+        "every_nth": 3,
+        "replaces": "S1"
+      },
+      "sequence": [
+        "B1",
+        "B2",
+        "B3",
+        "A6"
+      ]
+    },
+    {
+      "id": "S3",
+      "display_name": "饭后",
+      "rule": "12:30、19:00 各一次,不受工作时段限制",
+      "trigger": {
+        "type": "fixed",
+        "times": [
+          "12:30",
+          "19:00"
+        ]
+      },
+      "sequence": [
+        "C1",
+        "C2"
+      ]
+    },
+    {
+      "id": "S4",
+      "display_name": "犯困",
+      "rule": "下午 15:00 一次",
+      "trigger": {
+        "type": "fixed",
+        "times": [
+          "15:00"
+        ]
+      },
+      "sequence": [
+        "A7",
+        "A4"
+      ]
+    }
+  ],
+  "settings": {
+    "enabled": false,
+    "work_hours": [
+      [
+        "09:00",
+        "12:00"
+      ],
+      [
+        "13:30",
+        "18:30"
+      ]
+    ],
+    "snooze_minutes": 10,
+    "max_snooze": 2,
+    "fixed_window_minutes": 60,
+    "start_date": null
+  }
+}

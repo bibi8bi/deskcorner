@@ -1,0 +1,104 @@
+
+.表名 select{width:auto;padding:4px 10px;font-size:var(--f1)}
+.表名 .补号提示{font-size:var(--f0)}
+
+.表条 .搜{min-height:28px;padding:3px 11px;border:1px solid var(--线);
+  border-radius:var(--r特);background:var(--面);font-size:var(--f1);color:var(--字)}
+.表条 .mini{white-space:nowrap}
+
+.条换 > .表条{align-content:flex-start}
+
+.表条 .mini.开着{border-color:var(--蓝);color:var(--蓝深);font-weight:600}
+
+.批条 .mini.要当心{border:1px dashed var(--琥);color:var(--琥)}
+
+.批条 .mini[aria-disabled="true"]{border-style:dashed;cursor:not-allowed;opacity:.72}
+
+.表筛选板[hidden]{display:none}
+.表筛条{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:5px 0}
+.表筛条 .且{font-size:var(--f0);color:var(--次);min-width:22px}
+.表筛条 select,.表筛条 input{min-height:28px;padding:2px 8px;font-size:var(--f1);
+  border:1px solid var(--线);border-radius:var(--r小);background:var(--面);color:var(--字);width:auto}
+.表筛条 .去掉{min-height:28px;min-width:28px;border:1px solid var(--线);border-radius:var(--r小);
+  background:var(--面);color:var(--次);font-size:var(--f1)}
+.表筛选板 .表筛脚{display:flex;gap:8px;align-items:center;margin-top:7px}
+.表筛选板 .表筛脚 .smallnote{margin-left:auto}
+
+.表菜单{position:fixed;z-index:120;width:250px;max-height:340px;overflow:auto;
+  background:var(--面);border:1px solid var(--边);border-radius:var(--r中);padding:8px;
+  box-shadow:0 10px 30px #15263A26}
+.表菜单 h4{font-size:var(--f1);color:var(--弱);padding:4px 6px;margin:0}
+.表菜单 .条{display:flex;align-items:center;gap:6px;padding:3px 4px;border-radius:var(--r小)}
+.表菜单 .条:hover{background:var(--蓝浅)}
+.表菜单 .条 label{display:flex;align-items:center;gap:7px;flex:1;min-height:28px;
+  font-size:var(--f1);color:var(--次);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.表菜单 .条 .挪{min-height:26px;min-width:26px;border:1px solid var(--线);border-radius:var(--r小);
+  background:var(--面);color:var(--次);font-size:var(--f0);padding:0}
+.表菜单 .条 .挪:disabled{border-style:dashed;opacity:.35;cursor:not-allowed}
+.表菜单 .条 .抓{cursor:grab;color:var(--弱);font-size:var(--f1);padding:0 2px}
+.表菜单 .条.拖中{background:var(--蓝浅);border:1px dashed var(--蓝)}
+.表菜单 button.整条{display:block;width:100%;text-align:left;min-height:28px;border:0;
+  background:none;padding:5px 7px;border-radius:var(--r小);color:var(--次);font-size:var(--f1)}
+.表菜单 button.整条:hover{background:var(--蓝浅);color:var(--蓝深)}
+
+.表菜单 button.整条.选了{color:var(--蓝深);font-weight:600}
+.表菜单 .分{border-top:1px solid var(--线);margin:6px 0}
+
+.视图单 .项 .名{flex:1;min-width:0;padding:0;border:0;background:none;color:inherit;font:inherit;
+  text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.视图单 .项 .删{flex:none;min-width:26px;min-height:26px;padding:0;border:1px solid var(--线);
+  border-radius:var(--r小);background:var(--面);color:var(--次);font-size:var(--f0);cursor:pointer}
+
+table.勾选表 th.能排{cursor:pointer;user-select:none}
+table.勾选表 th .排号{margin-left:4px;font-size:var(--f0);color:var(--弱)}
+table.勾选表 th.排上了 .排号{color:var(--蓝);font-weight:700}
+
+table.勾选表 th.冻,table.勾选表 td.冻{position:sticky;z-index:3;background:var(--面)}
+
+table.勾选表 thead th.冻{z-index:7}
+table.勾选表 tr.选中 td.冻{background:var(--蓝浅)}
+
+table.勾选表 th.冻末,table.勾选表 td.冻末{box-shadow:inset -2px 0 0 var(--边)}
+
+@media(pointer:coarse){
+  .表条 .mini,.批条 .mini,.批条 .取消,.表条 .搜,
+  .表菜单 button.整条,.表菜单 .条 label,.表菜单 .条 .挪,
+  .表筛条 select,.表筛条 input,.表筛条 .去掉{min-height:44px}
+
+  .视图单 .项 .删{min-width:32px;min-height:32px}
+  .表菜单{width:270px}
+}
+
+.表框{max-height:calc(100dvh - 360px);min-height:180px}
+
+td.改 input.格改框{position:absolute;inset:3px;width:auto;height:auto;min-height:0;
+  padding:0 6px;border:1px solid var(--蓝);border-radius:var(--r小);
+  background:var(--面);color:var(--字);font-size:var(--f2);line-height:1.4;z-index:1}
+
+:is(#模型更新页,#按供应商页) .条换{min-width:0;grid-template-columns:minmax(0,1fr)}
+:is(#模型更新页,#按供应商页) .条换 > .表条{min-width:0;align-self:start;align-content:flex-start}
+:is(#模型更新页,#按供应商页) .条换:not(.已勾) > .批条,
+:is(#模型更新页,#按供应商页) .条换.已勾 > .表条:not(.批条){display:none}
+:is(#模型更新页,#按供应商页) .批条{flex-wrap:wrap;overflow:visible}
+:is(#模型更新页,#按供应商页) .批条 .已选{white-space:normal;overflow-wrap:anywhere;max-width:100%}
+:is(#模型更新页,#按供应商页) .批条 button{min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+:is(#模型更新页,#按供应商页) table.勾选表 .勾列{width:44px;min-width:44px;height:44px;cursor:pointer}
+:is(#模型更新页,#按供应商页) table select,
+:is(#模型更新页,#按供应商页) table button[role=switch],
+#模型更新页 .更新筛选 button,
+#按供应商页 .表名 select,
+:is(#模型更新页,#按供应商页) .表条 .主钮{min-height:44px}
+
+:is(#模型更新页,#按供应商页) .表条 .表页动作{min-height:44px}
+
+:is(#模型更新页,#按供应商页) .批条 button,
+:is(#模型更新页,#按供应商页) table button{min-width:44px}
+
+@media (max-width:640px){
+
+  .条换:has(>.表条.机收工具)>.批条{grid-area:2/1}
+  .条换.已勾>.表条.机收工具{visibility:visible}
+  :is(#模型更新页,#按供应商页) .条换.已勾>.表条.机收工具{display:flex}
+
+  table .冻截{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}

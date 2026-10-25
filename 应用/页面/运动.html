@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>运动提醒</title>
+<link rel="stylesheet" href="共用.css">
+<script>
+try {
+  记 = localStorage.getItem("ui:主题");
+  if (记 === "light" || 记 === "dark" || 记 === "eye")
+    document.documentElement.setAttribute("data-theme", 记);
+} catch (e) {}
+var 记;
+</script>
+<script>
+if (new URLSearchParams(location.search).get("桌面") === "1")
+  document.documentElement.classList.add("桌面");
+</script>
+<style>
+  html,body{margin:0;background:var(--bg);color:var(--字)}
+  body{font-size:var(--f3);line-height:1.6;padding:var(--s3) var(--s4) var(--s4);box-sizing:border-box;min-height:100vh}
+  [hidden]{display:none!important}
+  .头{display:flex;align-items:center;justify-content:space-between;gap:var(--s2);min-height:44px}
+  .头 .题{font-size:var(--f2);color:var(--次)}
+  .大钮{min-height:44px;min-width:88px}
+  h1{font-size:var(--f5);margin:var(--s2) 0 2px}
+  .要领{color:var(--次);min-height:3.2em;margin:0}
+
+  .台{background:var(--面);border:1px solid var(--线);border-radius:10px;display:flex;justify-content:center;align-items:flex-end;margin-top:var(--s2)}
+
+  html:not(.桌面) #示范{display:flex;flex-direction:column;height:calc(100vh - var(--s3) - var(--s4))}
+  html:not(.桌面) #播放区{display:flex;flex-direction:column;flex:1;min-height:0}
+  html:not(.桌面) .台{flex:1 1 0;min-height:240px;container-type:size}
+  .台 svg{width:220px;height:200px;display:block}
+  .台 .真人{position:relative;height:min(100cqh, 100cqw / var(--宽比, 1), 832px);aspect-ratio:var(--宽比, 1)}
+
+  .台 .真人 canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  .台 .臀光{position:absolute;overflow:visible;opacity:0;pointer-events:none}
+  .息{height:6px;margin-top:4px;border-radius:3px;background:var(--面2);overflow:hidden}
+  .息 i{display:block;height:100%;width:0;background:var(--琥)}
+  .台 .人{stroke:var(--字);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;fill:none}
+  .台 .头像{fill:var(--bg);stroke:var(--字);stroke-width:5}
+  .台 .椅{stroke:var(--边);stroke-width:5;stroke-linecap:round;fill:none}
+  .台 .肚{fill:var(--蓝浅);stroke:var(--蓝);stroke-width:2.5}
+  .台 .亮{fill:var(--琥浅);stroke:var(--琥);stroke-width:2.5;opacity:0}
+  .台 .箭{stroke:var(--蓝);stroke-width:3.5;fill:none;stroke-linecap:round;opacity:0}
+  .台 .点{fill:var(--琥);opacity:0}
+  .台 *{transform-box:view-box}
+  .停 .台 *{animation-play-state:paused!important}
+
+  .进度{display:flex;align-items:center;gap:var(--s2);margin-top:var(--s3)}
+  .条{flex:1;height:8px;border-radius:4px;background:var(--面2);overflow:hidden}
+  .条 i{display:block;height:100%;width:0;background:var(--蓝);transition:width .25s linear}
+  .数{font-variant-numeric:tabular-nums;min-width:7.5em;text-align:right}
+  .拍{min-height:1.6em;color:var(--蓝);font-weight:600;margin-top:2px}
+  .暂停字{color:var(--琥);font-weight:600}
+  .底{display:flex;justify-content:space-between;align-items:center;margin-top:var(--s4);gap:var(--s5)}
+  .块{border:1px solid var(--线);border-radius:10px;padding:var(--s3);margin-top:var(--s3);background:var(--面)}
+  .块 p{margin:0 0 var(--s2)}
+  .完成{text-align:center;padding-top:var(--s5)}
+  .完成 .大{font-size:var(--f6);font-weight:700;color:var(--青)}
+  .错行{color:var(--红);font-weight:600}
+  .钮排{display:flex;gap:var(--s2);flex-wrap:wrap;margin-top:var(--s2)}
+
+  .设{max-width:640px}
+  .行{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;margin:var(--s3) 0}
+  .行 > label:first-child{min-width:5em;color:var(--次)}
+  .开关{display:inline-flex;align-items:center;gap:var(--s2);cursor:pointer;min-height:44px}
+  .开关 input{width:22px;height:22px;accent-color:var(--蓝);margin:0}
+  .开关 b{font-size:var(--f4)}
+  .状态{font-weight:600}
+  .状态.开{color:var(--蓝)} .状态.关{color:var(--次)}
+  .关着 .随开{opacity:.55}
+  input[type=time],input[type=date]{min-height:36px;padding:0 6px;border:1px solid var(--边);border-radius:6px;background:var(--bg);color:var(--字)}
+  .注{color:var(--次);font-size:var(--f2)}
+  .存字{font-size:var(--f2);color:var(--青);min-width:5em}
+  table{border-collapse:collapse;width:100%;margin-top:var(--s2);font-size:var(--f2)}
+  th,td{border-bottom:1px solid var(--线);padding:6px 8px;text-align:left}
+  th{color:var(--次);font-weight:600}
+  td.id{font-variant-numeric:tabular-nums;color:var(--次)}
+  .果.完成{color:var(--青)} .果.部分{color:var(--琥)} .果.跳过,.果.稍后{color:var(--次)}
+  .空{color:var(--次);padding:var(--s3) 0}
+  .类型表 li{margin:2px 0}
+
+  .桌面{--人高:min(max(200px, 100vh - 140px), 832px, (100vw - 8px) * 1.733)}
+  .桌面,.桌面 body{background:transparent}
+  .桌面 body{padding:4px;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;font-size:var(--f2)}
+  .桌面 #示范{display:flex;flex-direction:column;justify-content:flex-end;flex:1;background:var(--站图,url('小人/恶魔/站.png')) no-repeat center bottom/auto var(--人高)}
+  .桌面 #示范:has(#播放区:not([hidden])){background:none}
+  .桌面 .头,.桌面 .要领,.桌面 .条{display:none}
+  .桌面 .泡,.桌面 .块,.桌面 .完成{position:relative;background:var(--面);border:1px solid var(--边);border-radius:10px;padding:6px 8px;box-shadow:0 2px 8px rgba(0,0,0,.25);margin:0 0 10px}
+
+  .桌面 .泡::after,.桌面 .块::after,.桌面 .完成::after{content:'';position:absolute;left:50%;bottom:-7px;width:12px;height:12px;margin-left:-6px;background:var(--面);border-right:1px solid var(--边);border-bottom:1px solid var(--边);transform:rotate(45deg)}
+  .桌面 .完成{text-align:center;margin-bottom:calc(var(--人高) + 10px)}
+  .桌面 .完成 .大{font-size:var(--f3)}
+  .桌面 #自关说{display:inline-block;margin-right:8px}
+  .桌面 .完成 p{margin:2px 0;font-size:var(--f1)}
+  .桌面 #播放区:has(#确认结束:not([hidden])) .泡{display:none}
+  .桌面 .块{margin-bottom:calc(var(--人高) + 6px)}
+  .桌面 #播放区 .块{margin-bottom:10px}
+  .桌面 h1{font-size:var(--f3);margin:0;display:inline}
+  .桌面 .进度{display:inline;margin:0 0 0 6px}
+  .桌面 .数{min-width:0;color:var(--次)}
+  .桌面 .拍{min-height:0;margin:0}
+  .桌面 .底,.桌面 .钮排{margin-top:4px;gap:8px;justify-content:flex-start;flex-wrap:nowrap}
+  .桌面 .大钮{min-height:30px;min-width:0;padding:0 8px;font-size:var(--f2)}
+  .桌面 .台{background:none;border:0;margin:0;-webkit-app-region:drag}
+  .桌面 .台 .真人{height:var(--人高)}
+  .桌面 .台 svg{width:200px;height:182px}
+  .桌面 button{-webkit-app-region:no-drag}
+  @keyframes 呼吸{0%{transform:scaleX(1)}40%{transform:scaleX(1.7)}100%{transform:scaleX(1)}}
+  @keyframes 上提{0%,40%{opacity:0;transform:translateY(6px)}55%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
+  @keyframes 摇{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+  @keyframes 转体{0%,100%{transform:scaleX(1)}30%,70%{transform:scaleX(.45)}}
+  @keyframes 转脚{to{transform:rotate(360deg)}}
+  @keyframes 上下{0%,100%{transform:translateY(-8px)}50%{transform:translateY(8px)}}
+  @keyframes 敲{0%,100%{transform:translate(0,0)}25%{transform:translate(10px,-8px)}50%{transform:translate(20px,0)}75%{transform:translate(10px,-8px)}}
+  @keyframes 后仰{0%,100%{transform:rotate(0)}50%{transform:rotate(-16deg)}}
+  @keyframes 夹{0%,70%{opacity:1}75%,100%{opacity:0}}
+  @keyframes 踏左{0%,100%{transform:rotate(-25deg)}50%{transform:rotate(0)}}
+  @keyframes 踏右{0%,100%{transform:rotate(0)}50%{transform:rotate(-25deg)}}
+  @keyframes 画圈{0%{transform:translate(0,-9px)}25%{transform:translate(9px,0)}50%{transform:translate(0,9px)}75%{transform:translate(-9px,0)}100%{transform:translate(0,-9px)}}
+  @keyframes 按{0%,100%{opacity:.25;transform:scale(.8)}50%{opacity:1;transform:scale(1.25)}}
+</style>
+</head>
+<body>
+
+<main id="示范" hidden>
+  <div class="头">
+    <span class="题" id="组题"></span>
+    <button class="次钮 大钮" id="结束钮" type="button" title="中途结束这一轮;已经做的照样记下,记为「部分完成」">结束</button>
+  </div>
+  <div id="确认结束" class="块" hidden>
+    <p>中途结束,本轮记为「部分完成」?</p>
+    <div class="钮排">
+      <button class="主钮 大钮" id="确认结束钮" type="button">结束并记录</button>
+      <button class="次钮 大钮" id="继续做钮" type="button">继续做</button>
+    </div>
+  </div>
+  <div id="播放区">
+    <div class="台" id="台"></div>
+    <h1 id="动作名"></h1>
+    <p class="要领" id="要领"></p>
+    <div class="进度"><div class="条"><i id="条"></i></div><span class="数" id="数"></span></div>
+    <div class="拍" id="拍"></div>
+    <div class="息" id="息" hidden title="涨满 = 吸气夹紧 5 秒;退回 = 呼气放松"><i></i></div>
+    <div class="底">
+      <button class="主钮 大钮" id="暂停钮" type="button">⏸ 暂停</button>
+      <button class="次钮 大钮" id="下一个钮" type="button" title="这个动作不做了,直接跳到下一个;跳过的不算做完">下一个 ›</button>
+    </div>
+  </div>
+  <div id="完成区" class="完成" hidden>
+    <div class="大" id="完成字">✓ 完成</div>
+    <p id="完成说"></p>
+    <p class="注" id="自关说"></p>
+    <button class="主钮 大钮" id="关闭钮" type="button">关闭</button>
+  </div>
+  <div id="错区" class="块" hidden>
+    <p class="错行" id="错句"></p>
+    <div class="钮排">
+      <button class="主钮 大钮" id="重试钮" type="button">重试</button>
+      <button class="次钮 大钮" id="复制报错钮" type="button" title="把这次出错的整段信息复制走,发给维护的人">⧉ 复制报错</button>
+      <button class="次钮 大钮" id="错关钮" type="button">关闭</button>
+    </div>
+  </div>
+</main>
+
+<main id="设置" class="设" hidden>
+  <h1>运动提醒</h1>
+  <p class="注">久坐时每隔一阵在桌面冒个提醒,跟着小人做 2–4 分钟。</p>
+  <div class="行">
+    <label class="开关" title="打开后到点提醒「该动一动了」(要有桌面端来弹,只开网页时不弹);关着就一次都不冒">
+      <input type="checkbox" id="启用"><b>启用提醒</b>
+    </label>
+    <span class="状态" id="启用状态"></span>
+    <span class="存字" id="存字"></span>
+  </div>
+  <div id="随开" class="随开">
+    <div class="行">
+      <label>工作时段</label>
+      <input type="time" id="段1a"> – <input type="time" id="段1b">
+      <input type="time" id="段2a"> – <input type="time" id="段2b">
+    </div>
+    <p class="注">只在这两段里每 50 分钟提醒一次;饭后那两次不受它限制。</p>
+    <div class="行">
+      <label for="开始日">开始日期</label>
+      <input type="date" id="开始日">
+      <span id="周说"></span>
+    </div>
+    <div class="行"><label>下一次</label><span id="下一次"></span></div>
+  </div>
+  <div class="行">
+    <button class="次钮 大钮" id="现在做钮" type="button">▶ 现在做一轮</button>
+    <span class="注">手动做一轮,不受开关限制,做完照样打卡</span>
+  </div>
+  <div id="设错" class="块" hidden>
+    <p class="错行" id="设错句"></p>
+    <div class="钮排"><button class="次钮 大钮" id="设复制钮" type="button" title="把这次出错的整段信息复制走">⧉ 复制报错</button></div>
+  </div>
+  <h2 style="font-size:var(--f4);margin:var(--s5) 0 0">今天</h2>
+  <div id="今日"></div>
+  <h2 style="font-size:var(--f4);margin:var(--s5) 0 0">提醒类型</h2>
+  <ul class="类型表 注" id="类型表"></ul>
+</main>
+
+<script src="运动.js"></script>
+</body>
+</html>

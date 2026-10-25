@@ -1,0 +1,2222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>待办中心</title>
+<link rel="stylesheet" href="共用.css">
+<link rel="stylesheet" href="表格.css">
+<script>
+try {
+  if (window.self === window.top && !/[?&]embed\b/.test(location.search)) {
+    记 = localStorage.getItem("ui:主题");
+    if (记 === "light" || 记 === "dark" || 记 === "eye")
+      document.documentElement.setAttribute("data-theme", 记);
+  }
+} catch (e) {}
+var 记;
+</script>
+<script>
+if (/[?&]solo=note\b/.test(location.search))
+  document.documentElement.classList.add("solo");
+</script>
+<script>
+if (/[?&]embed\b/.test(location.search) && /[?&]view=tab\b/.test(location.search))
+  document.documentElement.classList.add("tabview");
+</script>
+<style>
+  :root{
+
+    --star:var(--琥);
+    --warn:var(--琥); --warn-bg:var(--琥浅);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --warn:var(--琥); --warn-bg:var(--琥浅);
+    }
+  }
+  :root[data-theme="light"]{
+    --warn:var(--琥); --warn-bg:var(--琥浅);
+  }
+  :root[data-theme="dark"]{
+    --warn:var(--琥); --warn-bg:var(--琥浅);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:var(--字体);
+    font-size:var(--f3);line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:none;margin:0 auto;padding:14px 14px 40px}
+
+  html.embed .page-head h1,html.embed .page-head .today-label{display:none}
+  html.embed .wrap{max-width:none;padding:8px 10px 16px}
+  html.embed .主题钮{display:none}
+
+  html.tabview,html.tabview body{background:transparent}
+  html.tabview body{overflow:hidden}
+  html.tabview .wrap,html.tabview #listView{padding:0}
+  html.tabview #listShell{border:0;background:transparent;box-shadow:none;padding:0;margin:0}
+  html.tabview #listShell>.表名,html.tabview .tabs-search,html.tabview .list-note,html.tabview #lkNotice,
+  html.tabview .table-foot,html.tabview #btnNote,html.tabview #btnMove,html.tabview .bar-gap,html.tabview #workViews,html.tabview #viewTemp{display:none!important}
+  html.tabview #listShell .表身{padding:0;border:0;background:transparent}
+  html.tabview .条换{background:transparent;margin:0 0 8px;padding:0}
+  html.tabview #listBar{display:flex;flex-wrap:nowrap;align-items:center;justify-content:flex-end;gap:6px;
+    background:transparent;padding:0;border:0;min-width:0;overflow:hidden}
+  html.tabview #tabCount{flex:1 1 auto;min-width:4.5em;font-size:var(--f1);color:var(--弱);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  html.tabview #listBar .mini,html.tabview .tab-state{padding:4px 10px;min-height:30px;font-size:var(--f1);font-weight:500;color:var(--弱);white-space:nowrap;flex:none}
+  html.tabview .tab-state{border:1px solid var(--边);border-radius:var(--r中);background:var(--bg);cursor:pointer}
+  html.tabview #listBar .search2{flex:0 1 200px;min-width:0}
+  html.tabview #listBar .search2.收{display:none}
+  html.tabview #listBar .tab-搜钮:has(+ .search2:not(.收)){display:none}
+  html.tabview #listBar .tab-表钮{display:none}
+  html.tabview #listBar.收工具 #advBtn,html.tabview #listBar.收工具 #colBtn,html.tabview #listBar.收工具 #btnTrash{display:none}
+  html.tabview #listBar.收工具 .tab-表钮{display:inline-flex}
+  html.tabview #listBar.收关联 #btnLkPick{display:none}
+  html.tabview #listBar.收工具 .toolwrap{margin-right:-6px}
+
+  html.tabview #listBar .tab-短{display:none}
+  html.tabview #listBar.收字 .tab-长{display:none}
+  html.tabview #listBar.收字 .tab-短{display:inline}
+  html.tabview #listBar.换行{flex-wrap:wrap;row-gap:6px}
+  html.tabview #listBar.换行 #tabCount{flex:1 0 100%}
+
+  html.tabview #btnAdd{min-height:30px;padding:0 12px;border:1px solid var(--蓝);border-radius:var(--r中);
+    background:var(--bg);color:var(--蓝);font-size:var(--f1);font-weight:600;white-space:nowrap;flex:none;box-shadow:none}
+  html.tabview #btnLkPick{border:0;background:transparent;padding:0 4px;box-shadow:none}
+  html.tabview #btnLkPick:hover{color:var(--text);text-decoration:underline}
+  html.tabview .表框外{margin:0}
+
+  html.tabview .tscroll{max-height:none}
+
+  html.tabview .条换:not(.已勾) > .批条{display:none}
+  html.tabview #tb td .空.tab-空{justify-content:flex-start;min-height:44px;padding:0 4px}
+  @media (pointer:coarse){
+    html.tabview #listBar .mini,html.tabview .tab-state,html.tabview #btnAdd,html.tabview #btnLkPick{min-height:44px}
+    html.tabview #listBar .tab-搜钮,html.tabview #listBar .tab-表钮{min-width:44px}
+
+    html.tabview #tb td.改{height:44px}
+    html.tabview #tb button.addsub{min-height:44px;min-width:44px}
+    html.tabview #tb .stars{display:inline-flex;align-items:stretch}
+    html.tabview #tb .stars>*{display:inline-flex;align-items:center;min-height:44px;min-width:22px;justify-content:center}
+    html.tabview #tb td.cchk{min-width:44px;height:44px;cursor:pointer}
+  }
+
+  html.solo body{overflow:hidden}
+  html.solo .wrap,html.solo #cardPage{display:none!important}
+  html.solo #noteMask{background:none;padding:0;align-items:stretch;justify-content:stretch}
+  html.solo #noteMask #noteBox{width:100%;max-width:none;height:100%;max-height:none;border:0;border-radius:0;box-shadow:none}
+  html.solo #noteFull{display:none!important}
+  .solo-only{display:none}
+  html.solo .solo-only{display:inline-flex}
+  #soloDone{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    padding:16px;text-align:center;background:var(--bg);color:var(--muted);z-index:60}
+  #soloDone[hidden]{display:none}
+
+  .head{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:2px}
+  .head h1{font-size:var(--f5);font-weight:650;margin:0;letter-spacing:-.01em}
+  .head .upd{color:var(--muted);font-size:var(--f1)}
+  .head .upd b{color:var(--doing);font-weight:650}
+  .note{max-width:900px;color:var(--faint);font-size:var(--f0);margin:3px 0 16px;line-height:var(--lh正)}
+
+  .bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border)}
+  .fld{display:flex;align-items:center;gap:5px;font-size:var(--f1);color:var(--muted)}
+  select,input[type=text],input[type=date]{font-family:inherit;font-size:var(--f1);color:var(--text);
+    background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r中);padding:5px 8px}
+  .search{flex:1;min-width:120px}
+  .cnt{color:var(--faint);font-size:var(--f1);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+  .tscroll{max-height:56vh;overflow:auto}
+
+  table{width:100%;border-collapse:collapse;font-size:var(--f2);min-width:0}
+
+  thead th{background:var(--surface);text-align:left;font-weight:650;color:var(--muted);
+    font-size:var(--f0);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;top:0}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr.done .matter{text-decoration:line-through;color:var(--faint)}
+  tbody tr:hover td{background:var(--surface-2)}
+  .matter.clkopen{cursor:pointer}
+  .matter.clkopen:hover{color:var(--accent);text-decoration:underline}
+  .cid{width:46px;color:var(--faint);font-variant-numeric:tabular-nums;font-size:var(--f1);cursor:pointer}
+  .cstar{width:52px;white-space:nowrap}
+
+  .cmatter{min-width:180px}
+  td.cmatter{cursor:pointer}
+  td.cmatter:hover .task-title{color:var(--accent)}
+  .cdue{white-space:nowrap;color:var(--muted);font-variant-numeric:tabular-nums}
+  .cdue.od{color:var(--warn);font-weight:650}
+
+  .matter{font-weight:550}
+
+  .stars{cursor:pointer;user-select:none;letter-spacing:1px;color:var(--star);font-size:var(--f3)}
+  .stars i,.stars button{font-style:normal} .stars i.off,.stars button.off{color:var(--border-strong)}
+  .stars button{background:none;border:0;padding:0;margin:0;font-size:inherit;color:inherit;line-height:inherit;cursor:pointer}
+  .stars button:focus-visible{outline:2px solid var(--蓝);outline-offset:1px;border-radius:var(--r小)}
+
+  .stsel,.sttag{border:1px solid var(--border-strong);border-radius:var(--r中);padding:3px 6px;font-size:var(--f1);
+    background:var(--bg);color:var(--text)}
+  .stsel.doing,.sttag.doing{border-color:var(--doing);color:var(--doing);background:var(--doing-bg);font-weight:600}
+  .stsel.done,.sttag.done{color:var(--faint)}
+
+  .sttag{display:inline-block;white-space:nowrap;line-height:1.35}
+
+  .tags{display:flex;flex-wrap:wrap;gap:4px}
+  .tag{display:inline-flex;align-items:center;gap:3px;font-size:var(--f0);padding:2px 7px;border-radius:var(--r小);
+    white-space:nowrap;text-decoration:none;cursor:pointer}
+
+  .tag.other{color:var(--muted);background:var(--surface);border-color:var(--border)}
+
+  .tag.nolink{cursor:default}
+
+  .tprog{position:relative;height:14px;border-radius:var(--r中);background:var(--surface);border:1px solid var(--border);
+    margin:3px 0 1px;max-width:260px;overflow:hidden}
+  .tprog-fill{position:absolute;left:0;top:0;bottom:0;background:var(--doing-bg);border-right:2px solid var(--doing)}
+  .tprog-txt{position:relative;display:block;text-align:center;font-size:var(--f0);line-height:12px;color:var(--doing);font-weight:650}
+
+  .srcpre{display:inline-block;margin-right:5px;padding:0 5px;border:1px solid var(--border);border-radius:var(--r小);
+    font-size:var(--f0);color:var(--muted);background:var(--surface)}
+  .none{color:var(--faint)}
+
+  .op-link{color:var(--accent);cursor:pointer;font-size:var(--f1);margin-left:8px;background:none;border:none;font-family:inherit;padding:0}
+  .op-link:hover{text-decoration:underline}
+  .op-del{color:var(--muted)}
+
+  .mask{position:fixed;inset:0;background:rgba(20,22,28,.5);display:flex;align-items:flex-start;
+    justify-content:center;padding-top:10vh;z-index:50}
+  .mask.hidden{display:none}
+  .modal{background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r大);
+    width:min(460px,92vw);max-height:82vh;display:flex;flex-direction:column;
+    box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
+  .modal .mh{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--surface);
+    border-bottom:1px solid var(--border);font-weight:650;font-size:var(--f3)}
+  .modal .mh .grow{flex:1}
+  .modal .mh .ic{cursor:pointer;color:var(--muted);font-size:var(--f4);background:none;border:none;padding:2px 4px}
+  .modal .mh .ic:hover{color:var(--text)}
+  .modal .mb{padding:14px;overflow:auto}
+  .modal label{display:block;font-size:var(--f0);color:var(--muted);margin:0 0 4px}
+  .modal .row{margin-bottom:12px}
+  .modal input[type=text]{width:100%}
+  .modal .inline{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+  .modal .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:2px}
+  .dsect{border-top:1px solid var(--border);margin-top:12px;padding-top:11px}
+  .dsect h4{margin:0 0 7px;font-size:var(--f1);color:var(--muted);font-weight:700}
+  .imgrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+  .thumb{position:relative;width:52px;height:52px;border-radius:var(--r中);background:var(--surface-2);border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;font-size:var(--f4);color:var(--faint);overflow:visible}
+  .thumb img{width:52px;height:52px;object-fit:cover;border-radius:var(--r中);cursor:zoom-in}
+  .thumb .delimg{position:absolute;top:-6px;right:-6px;width:18px;height:18px;border-radius:50%;
+    background:var(--warn);color:var(--反字);display:flex;align-items:center;justify-content:center;font-size:var(--f0);cursor:pointer}
+  .addimg{width:52px;height:52px;border-radius:var(--r中);border:1px dashed var(--border-strong);
+    display:flex;align-items:center;justify-content:center;font-size:var(--f0);color:var(--muted);cursor:pointer}
+  .addimg:hover{border-color:var(--accent);color:var(--accent)}
+  .cmt{border:1px solid var(--border);border-radius:var(--r中);padding:7px 9px;margin-bottom:6px;font-size:var(--f1)}
+  .cmt .ct{font-size:var(--f0);color:var(--faint);margin-bottom:3px}
+  .cmt .cx{cursor:pointer;color:var(--warn)}
+
+  textarea.cmtbox{display:block;width:100%;box-sizing:border-box;resize:vertical;min-height:52px;font-family:inherit;font-size:var(--f1);
+    color:var(--text);background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r中);padding:5px 8px}
+  .cmt .cbody{white-space:pre-wrap;word-break:break-word}
+  .cmt .cacts{float:right;display:inline-flex;gap:10px}
+  .cmt .cacts button{background:none;border:0;padding:0;font:inherit}
+  .cmt .ce{color:var(--accent)}
+  .cmt .cedited{color:var(--muted);margin-left:6px;cursor:help}
+  .taglist-edit{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+  .taglist-edit .tag{cursor:default}
+  .taglist-edit .tx{cursor:pointer;font-weight:700;opacity:.6}
+  .taglist-edit .tx:hover{opacity:1}
+  .tag-add{border:1px dashed var(--border-strong);border-radius:var(--r圆);padding:2px 9px;font-size:var(--f0);
+    color:var(--muted);cursor:pointer;background:none;font-family:inherit}
+  .tag-add:hover{border-color:var(--accent);color:var(--accent)}
+
+  .titw{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
+  .titw .em{font-size:22px;line-height:var(--lh密)}
+  .dtitle{font-size:22px;font-weight:700;margin:0;flex:1;letter-spacing:-.01em;
+    border:none;background:none;color:var(--text);min-width:0;word-break:break-word}
+  .dtitle:empty::before{content:'无标题待办';color:var(--faint)}
+  .props{display:flex;flex-wrap:wrap;gap:6px 18px;margin:8px 0 4px;padding-bottom:12px;
+    border-bottom:1px solid var(--border);font-size:var(--f2);color:var(--muted)}
+  .prop{display:flex;align-items:center;gap:7px}
+  .prop label{margin:0;color:var(--faint);font-size:var(--f1)}
+
+  .rel{margin:12px 0;padding-bottom:12px;border-bottom:1px solid var(--border)}
+  .rel .rlabel{font-size:var(--f1);color:var(--faint);margin-bottom:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  .chip-add{border:1px dashed var(--border-strong);border-radius:var(--r圆);padding:3px 11px;font-size:var(--f1);
+    color:var(--muted);cursor:pointer;background:none;font-family:inherit}
+  .chip-add:hover{border-color:var(--accent);color:var(--accent)}
+
+  .doc{margin-top:8px}
+  .block{--edit-line-x:27px;position:relative;display:flex;align-items:flex-start;gap:2px;padding:3px 0;margin:2px 0;border-radius:var(--r中)}
+  .bhandles{width:24px;flex:0 0 24px;display:flex;gap:2px;justify-content:flex-end;
+    opacity:0;transition:opacity .1s;padding-top:3px}
+  .block:hover .bhandles,.block.dragging .bhandles{opacity:1}
+  .bh{width:20px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:var(--r小);
+    cursor:pointer;color:var(--faint);font-size:var(--f3);user-select:none;touch-action:none}
+  .bh:hover{background:var(--surface-2);color:var(--text)}
+
+  .bh.grip{cursor:grab;font-size:var(--f4);line-height:1}.bh.grip:active{cursor:grabbing}
+  .bbody{flex:1;min-width:0;padding:2px 4px}
+  .btext{min-height:1.5em;word-break:break-word;white-space:pre-wrap;font-size:var(--f3)}
+
+  .block [contenteditable]:focus{outline:none}
+  .block:focus-within::before{content:'';position:absolute;z-index:2;left:var(--edit-line-x);top:3px;bottom:3px;
+    width:1.5px;background:var(--accent);pointer-events:none}
+  .btext:empty::before{content:'输入文字,或点下方 ＋ 加图…';color:var(--faint)}
+  .bimgwrap{display:block;position:relative;width:fit-content;max-width:calc(100% - 92px);min-height:42px}
+  .bimgwrap.al-center{margin-left:auto;margin-right:auto}
+  .bimgwrap.al-right{margin-left:auto}
+  .bimg{position:relative;display:block;width:100%;max-width:100%}
+  .bimg img{display:block;width:100%;height:auto;border-radius:var(--r中);border:1px solid var(--border)}
+  .bimg .rz{position:absolute;right:-5px;bottom:-5px;width:16px;height:16px;border-radius:50%;
+    background:var(--accent);border:2px solid var(--bg);cursor:nwse-resize;touch-action:none}
+  .bimgwrap .imbar{position:absolute;left:calc(100% + 6px);top:0;display:flex;gap:4px;opacity:0;transition:opacity .1s;z-index:2}
+  .bimgwrap:hover .imbar{opacity:1}
+
+  #noteBox .bimgwrap:not(.sized) .bimg img{width:auto;max-width:100%;max-height:132px}
+  #noteBox .bimg img[data-看图]{cursor:zoom-in}
+  .imbar .ib.看大图{font-family:inherit;line-height:inherit;cursor:zoom-in}
+  #noteBox .bimgwrap:focus-within .imbar{opacity:1}
+  @media(pointer:coarse){ .imbar .ib.看大图{display:none} }
+
+  #noteBox .bimgwrap{max-width:calc(100% - 132px)}
+  @media(max-width:700px){
+    #noteBox .bimgwrap.sized{max-width:100%}
+    #noteBox .bimgwrap:not(.sized) .imbar,#noteBox .bimgwrap:not(.sized) .imw{left:calc(100% + 6px);right:auto}
+  }
+  #noteBox .bimgwrap:not(.sized) .imw{width:auto;white-space:nowrap;text-align:left}
+  .bkfile[draggable=true]{cursor:grab}
+  .imbar .ib{border:1px solid var(--border-strong);background:var(--bg);color:var(--muted);
+    border-radius:var(--r中);padding:2px 7px;font-size:var(--f0);cursor:pointer;user-select:none}
+  .imbar .ib:hover{border-color:var(--accent);color:var(--text)}
+  .imbar .ib.on{background:var(--accent-soft);border-color:var(--accent);font-weight:700;color:var(--text)}
+  .imw{position:absolute;left:calc(100% + 6px);bottom:0;width:86px;font-size:var(--f0);color:var(--faint);
+    text-align:right;font-variant-numeric:tabular-nums}
+  @media(max-width:700px){
+    .bimgwrap{max-width:100%}
+    .bimgwrap .imbar,.bimgwrap .imw{left:auto;right:4px;background:color-mix(in srgb,var(--bg) 82%,transparent);padding:2px 4px;border-radius:var(--r小)}
+  }
+  .addrow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 2px;padding-left:26px}
+  .addbtn{border:1px dashed var(--border-strong);border-radius:var(--r中);padding:0 12px;font-size:var(--f1);
+    color:var(--muted);cursor:pointer;background:none;font-family:inherit;display:inline-flex;gap:6px;
+    align-items:center;justify-content:center;min-width:96px;height:30px}
+  .addbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .dropline{height:2px;background:var(--accent);border-radius:2px;margin:2px 0 2px 26px}
+
+  .block.selblk{background:var(--accent-soft);outline:1px solid transparent;outline-offset:3px}
+  .block.selblk::after{content:'';position:absolute;left:var(--edit-line-x);right:-3px;top:-2px;bottom:-2px;
+    border:1.5px solid var(--accent);border-radius:var(--r中);pointer-events:none}
+  .block.selblk .bhandles{opacity:1}
+
+  .block.dropin{outline:2px dashed var(--accent);outline-offset:-1px;background:var(--accent-soft)}
+  .block.dropin::after{content:'放进这一条底下';position:absolute;right:6px;top:50%;transform:translateY(-50%);
+    font-size:var(--f0);color:var(--accent);background:var(--bg);padding:1px 6px;border-radius:var(--r小);
+    border:1px solid var(--accent);pointer-events:none;white-space:nowrap}
+
+  .bgroup{position:relative;margin:7px 0}
+  .bgroup::before{content:'';position:absolute;left:21px;top:20px;bottom:1px;width:2px;
+    background:var(--border-strong);border-radius:2px}
+
+  .ghead{display:flex;align-items:center;gap:7px;padding-left:18px;font-size:var(--f0);
+    color:var(--muted);transition:color .12s}
+  .bgroup:hover .ghead{color:var(--text)}
+  .ghead .gh{cursor:grab;user-select:none;touch-action:none;padding:0 4px;border-radius:var(--r小);font-size:var(--f3)}
+  .ghead .gh:active{cursor:grabbing}
+  .ghead .gh:hover{background:var(--surface-2);color:var(--text)}
+  .ghead .gx{border:none;background:none;font-family:inherit;font-size:var(--f0);color:var(--muted);
+    cursor:pointer;text-decoration:underline;padding:0}
+  .ghead .gx:hover{color:var(--accent)}
+  .ghead .gfold{border:none;background:none;color:var(--muted);cursor:pointer;padding:0 2px;font:inherit}
+  .gbody{padding-left:28px;min-width:0}
+
+  .bkh{word-break:break-word;white-space:pre-wrap;font-weight:700;line-height:var(--lh密);color:var(--text)}
+  .bkh.lv1{font-size:var(--f5)}
+  .bkh.lv2{font-size:var(--f4)}
+  .bkh.lv3{font-size:var(--f3)}
+  .bkh:empty::before{content:'标题…';color:var(--faint);font-weight:400}
+  .bkline{display:flex;align-items:flex-start;gap:7px;font-size:var(--f3)}
+  .bkmark{flex:0 0 auto;color:var(--muted);user-select:none;padding-top:1px;
+    font-variant-numeric:tabular-nums;min-width:1.2em;text-align:right}
+  .bktext{flex:1;min-width:0;word-break:break-word;white-space:pre-wrap}
+  .bktext:empty::before{content:'…';color:var(--faint)}
+  .bkck{flex:0 0 auto;margin:3px 0 0;width:14px;height:14px;cursor:pointer;accent-color:var(--accent)}
+
+  .block.bk-todo.done .bktext{text-decoration:line-through;color:var(--faint)}
+  .bkcode{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r中);
+    padding:calc(var(--f0) * 1.5 + 10px) 10px 8px;font-family:var(--等宽);
+    font-size:var(--f2);line-height:var(--lh正);white-space:pre;overflow-x:auto;color:var(--text)}
+  .bkcode:empty::before{content:'贴代码…';color:var(--faint)}
+
+  .bkcode-头{display:flex;align-items:center;gap:8px;position:relative;z-index:1;height:calc(var(--f0) * 1.5);
+    margin:6px 11px calc(-6px - var(--f0) * 1.5) 11px}
+  .bklang{font-size:var(--f0);color:var(--faint);border:none;background:none;font-family:inherit;
+    display:block;flex:0 1 110px;min-width:0;height:100%;line-height:calc(var(--f0) * 1.5);
+    margin:0;padding:0;outline:none;width:110px;transition:opacity .12s}
+
+  .bkcopy{margin-left:auto;flex:none;height:100%;padding:0 4px;border:1px solid transparent;border-radius:var(--r小);background:none;
+    font-family:inherit;font-size:var(--f0);line-height:1;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .bkcopy:hover{border-color:var(--border-strong);color:var(--text)}
+  .bkcopy:focus-visible{outline:2px solid var(--蓝);outline-offset:1px}
+
+  @media(pointer:coarse){.bkcopy{position:relative;min-width:44px}.bkcopy::after{content:'';position:absolute;left:0;right:0;top:50%;height:44px;transform:translateY(-50%)}}
+
+  ::highlight(code-kw){color:var(--蓝)}
+  ::highlight(code-str){color:var(--琥)}
+  ::highlight(code-com){color:var(--弱)}
+  ::highlight(code-num){color:var(--青)}
+  ::highlight(code-tag){color:var(--红)}
+  ::highlight(code-op){color:var(--次)}
+  .bklang::placeholder{color:var(--faint)}
+
+  .bklang:placeholder-shown{opacity:0}
+  .block:hover .bklang,.bklang:focus{opacity:1}
+
+  .bklang:focus-visible{opacity:1;outline:2px solid var(--蓝);outline-offset:2px;border-radius:var(--r小)}
+
+  .block.bk-code:focus-within::before{top:5px;bottom:5px}
+  #noteBox .block.bk-code .bhandles,#detailView .block.bk-code .bhandles{top:5px}
+  .bkhr{border:none;border-top:1px solid var(--border-strong);margin:10px 0}
+  .bkfold{border:1px solid var(--border);border-radius:var(--r中);padding:6px 10px;background:var(--surface)}
+  .bkfold-h{display:flex;align-items:flex-start;gap:7px}
+  .bkfold-t{flex:0 0 auto;cursor:pointer;user-select:none;color:var(--muted);width:1em}
+  .bkfold-title{flex:1;min-width:0;font-weight:600;font-size:var(--f3);word-break:break-word;white-space:pre-wrap}
+  .bkfold-title:empty::before{content:'折叠块的标题…';color:var(--faint);font-weight:400}
+  .bkfold-b{margin:6px 0 0 calc(1em + 7px);font-size:var(--f3);word-break:break-word;white-space:pre-wrap}
+  .bkfold-b:empty::before{content:'收起来的内容…';color:var(--faint)}
+  .bkfold-kids{margin-top:6px;padding:4px 0 0 calc(1em + 7px);border-top:1px solid var(--线)}
+  .bkfold-kids[hidden]{display:none}
+  .bkquote{min-height:1.5em;border-left:3px solid var(--border-strong);padding:3px 10px;
+    color:var(--muted);font-size:var(--f3);word-break:break-word;white-space:pre-wrap}
+  .bkquote:empty::before{content:'引用的一段话…';color:var(--faint)}
+  .bkfile{display:flex;align-items:center;gap:8px;min-height:30px;color:var(--text);font-size:var(--f2)}
+  .bkfile a{color:var(--accent);text-decoration:underline;white-space:nowrap}
+  .bkfile.missing{color:var(--faint)}
+
+  .bktable-wrap{max-width:100%;overflow-x:auto;padding-bottom:2px;isolation:isolate}
+  .bktable-tools{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+  .bktable-edit{display:none}
+  .bktable-wrap button{border:1px solid var(--border);border-radius:var(--r小);background:var(--surface);
+    color:var(--muted);font:inherit;font-size:var(--f0);padding:3px 7px;cursor:pointer;white-space:nowrap}
+  .bktable-wrap button:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+  .bktable-wrap button:disabled{color:var(--faint);border-style:dashed;cursor:not-allowed}
+  table.bktable{width:max-content;min-width:100%;border-collapse:collapse;font-size:var(--f2)}
+  .bktable th,.bktable td{border:1px solid var(--border);padding:5px 8px;min-width:110px;text-align:left;vertical-align:top}
+  .bktable thead th{padding:3px 5px;background:var(--surface)}
+  .bktable .bktable-rowctl{min-width:0;width:1%;padding:3px 5px;background:var(--surface)}
+  .bktable .bkcell{white-space:pre-wrap;word-break:break-word;min-height:1.4em}
+  .bktable .bkcell:empty::before{content:'…';color:var(--faint)}
+  .bktable-addrow{margin-top:5px}
+  .bkdate{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:var(--f1);color:var(--muted)}
+  .bkdate input{font-family:inherit;font-size:var(--f1);color:var(--text);background:var(--bg);
+    border:1px solid var(--border);border-radius:var(--r小);padding:4px 6px}
+
+  .slash{position:absolute;z-index:60;min-width:230px;max-height:280px;overflow-y:auto;
+    background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r中);
+    box-shadow:0 8px 26px rgba(0,0,0,.18);padding:4px}
+  .slash .si{display:flex;gap:9px;align-items:baseline;padding:6px 9px;border-radius:var(--r中);cursor:pointer}
+  .slash .si[aria-selected="true"]{background:var(--accent-soft);outline:1px solid var(--accent)}
+  .slash .si b{font-size:var(--f2);font-weight:600;color:var(--text);white-space:nowrap}
+  .slash .si i{font-size:var(--f0);color:var(--muted);font-style:normal}
+  .slash .sempty{padding:8px 10px;font-size:var(--f1);color:var(--faint)}
+  .blockmenu{min-width:150px}
+  .blockmenu button{display:block;width:100%;border:0;background:none;color:var(--text);font:inherit;
+    font-size:var(--f2);text-align:left;padding:7px 9px;border-radius:var(--r中);cursor:pointer;white-space:nowrap}
+  .blockmenu button:hover,.blockmenu button:focus-visible{background:var(--surface);outline:1px solid var(--accent)}
+
+  .aimask{position:fixed;inset:0;background:rgba(20,22,28,.45);z-index:80;display:flex;
+    align-items:center;justify-content:center;padding:16px}
+  .aibox{background:var(--bg);border-radius:var(--r大,10px);border:1px solid var(--border-strong);
+    width:min(1040px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+  .aibox .aih{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;
+    align-items:center;justify-content:space-between;gap:10px}
+  .aibox .aih b{font-size:var(--f4)}
+  .aibox .aiw{flex:1;overflow:auto;padding:14px 16px;display:grid;gap:14px;
+    grid-template-columns:1fr 1fr}
+  @media(max-width:760px){.aibox .aiw{grid-template-columns:1fr}}
+  .aicol{min-width:0}
+  .aicol h4{margin:0 0 6px;font-size:var(--f1);color:var(--muted);font-weight:600}
+  .aicol .aibody{border:1px solid var(--border);border-radius:var(--r中);padding:10px 12px;
+    font-size:var(--f2);line-height:var(--lh松);white-space:pre-wrap;word-break:break-word;
+    background:var(--surface);max-height:52vh;overflow:auto}
+  .aicol .aibody .p{margin:0 0 7px}
+  .aicol .aibody .p:last-child{margin:0}
+  .aibox .aif{padding:11px 16px;border-top:1px solid var(--border);display:flex;
+    align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .aibox .ainote{font-size:var(--f0);color:var(--muted);flex:1;min-width:180px}
+
+  .cmts{margin-top:20px;border-top:1px solid var(--border);padding-top:12px}
+  .cmts summary{cursor:pointer;font-size:var(--f1);color:var(--muted);font-weight:600;list-style:none;
+    display:flex;align-items:center;gap:6px}
+  .cmts summary::-webkit-details-marker{display:none}
+  .cmts summary .tw{transition:transform .12s}
+  .cmts[open] summary .tw{transform:rotate(90deg)}
+  .cmts .cbody{margin-top:8px}
+
+  dialog.askdel{border:1px solid var(--border);border-radius:var(--r中);background:var(--bg);color:var(--text);
+    padding:0;max-width:min(430px,92vw);box-shadow:0 12px 40px rgba(0,0,0,.28)}
+  dialog.askdel::backdrop{background:rgba(20,22,28,.5)}
+  dialog.askdel form{padding:18px 20px 16px}
+  dialog.askdel h3{margin:0 0 8px;font-size:var(--f4);font-weight:650}
+
+  dialog.askdel .askwhy{margin:0 0 16px;font-size:var(--f2);color:var(--muted);line-height:var(--lh正)}
+  dialog.askdel .askbtns{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+  dialog.askdel :is(.主钮,.次钮,.危钮){min-height:44px}
+
+  dialog.askdel :is(.主钮,.次钮,.危钮):focus-visible{outline:2px solid var(--蓝);outline-offset:2px}
+
+  .cchk{width:26px;text-align:center}
+
+  .cchk .chk-na{color:var(--faint);user-select:none;cursor:default}
+
+  .钮旁说明{width:100%;margin-top:6px;text-align:right;font-size:var(--f0);color:var(--faint)}
+
+  .thsub{display:block;font-weight:400;font-size:var(--f0);color:var(--faint);margin-top:1px}
+  .cchk input{cursor:pointer}
+  .cctime{white-space:nowrap;color:var(--faint);font-variant-numeric:tabular-nums;font-size:var(--f1)}
+  tbody tr.ctx td{opacity:.55}
+
+  .toolwrap{position:relative}
+  .menu{position:absolute;top:40px;z-index:60;background:var(--bg);border:1px solid var(--border-strong);
+    border-radius:var(--r大);box-shadow:0 8px 26px rgba(0,0,0,.14);padding:8px;min-width:170px;display:none}
+  .menu.open{display:block}
+  .menu .mtitle{font-size:var(--f0);color:var(--muted);padding:4px 8px 6px}
+  .menu label{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:var(--r中);cursor:pointer;font-size:var(--f2);white-space:nowrap}
+  .menu label:hover{background:var(--surface)}
+  .menu .box{width:15px;height:15px;border:1.5px solid var(--border-strong);border-radius:var(--r小);display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto}
+  .menu .box.on{background:var(--accent);border-color:var(--accent);color:var(--反字)}
+  .menu .box svg{display:none} .menu .box.on svg{display:block}
+
+  #lkPick{position:fixed;z-index:120;min-width:290px;max-width:min(420px,94vw);padding:8px;
+    background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r大);box-shadow:0 10px 30px rgba(0,0,0,.16)}
+  #lkPick .lp-q{width:100%;box-sizing:border-box;border:1px solid var(--border-strong);border-radius:var(--r中);
+    background:var(--bg);color:var(--text);padding:6px 9px;font-size:var(--f2)}
+  #lkPick .lp-list{max-height:260px;overflow:auto;margin-top:6px;border-top:1px solid var(--border);padding-top:5px}
+  #lkPick .lp-td{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:var(--r中);cursor:pointer;font-size:var(--f2)}
+  #lkPick .lp-td:hover{background:var(--surface)}
+  #lkPick .lp-td .m{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #lkPick .lp-td .id,#lkPick .lp-td .st{font-size:var(--f0);color:var(--muted);white-space:nowrap}
+  #lkPick .lp-td.linked{opacity:.55;cursor:default}
+  #lkPick .lp-td.linked .st{color:var(--accent);font-weight:650}
+  #lkPick .lp-td.sub .m::before{content:'└ ';color:var(--muted)}
+  #lkPick .lp-foot{margin-top:6px;padding:3px 4px 0;font-size:var(--f0);color:var(--muted)}
+  .duepop{position:absolute;z-index:80;background:var(--bg);border:1px solid var(--border-strong);
+    border-radius:var(--r大);box-shadow:0 12px 40px rgba(0,0,0,.22);padding:10px;display:flex;
+    flex-direction:column;gap:8px;font-size:var(--f1)}
+  .duepop label{font-size:var(--f0);color:var(--muted)}
+  .duepop .dp-foot{display:flex;gap:6px;justify-content:flex-end}
+  .advchips{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;
+    border-bottom:1px solid var(--border);font-size:var(--f1);background:var(--surface)}
+  .advchips.hidden{display:none}
+  .advchips .fchip{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--accent);
+    color:var(--accent);background:var(--accent-soft);border-radius:var(--r圆);padding:2px 9px}
+  .advchips .fchip b{cursor:pointer;font-weight:700}
+
+  .advchips .fchip.warn{border:1px dashed var(--warn);color:var(--warn);background:var(--warn-bg)}
+
+  .fld.locked{opacity:.75}
+  .fld.locked select{border-style:dashed;cursor:not-allowed}
+  .advchips .conj{color:var(--muted);font-weight:650}
+  .mode-hint{font-size:var(--f0);color:var(--muted);background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--r中);padding:6px 9px;margin-bottom:10px;line-height:var(--lh正)}
+  .advrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+  .advrow select,.advrow input{font-size:var(--f1)}
+  .advrow input[type=text]{flex:1;min-width:90px}
+  .advfirst{color:var(--muted);font-size:var(--f1);width:38px;text-align:center}
+  .advrow [data-conj]{width:52px}
+  .fsect{margin-top:14px;border-top:1px solid var(--border);padding-top:10px}
+  .fsect .rlabel{font-size:var(--f1);color:var(--faint);margin-bottom:6px}
+  .frow{display:flex;align-items:center;gap:8px;padding:5px 2px;font-size:var(--f2)}
+  .frow a{color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .frow a:hover{text-decoration:underline}
+  .frow .fmeta{color:var(--faint);font-size:var(--f0);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .frow .fx{cursor:pointer;color:var(--warn);margin-left:auto;padding:0 4px}
+
+  .fstage{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--border);border-radius:var(--r中);
+    padding:3px 8px;font-size:var(--f1);color:var(--muted);margin:4px 6px 0 0;max-width:100%}
+  .fstage .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .fstage b{cursor:pointer;color:var(--warn);font-weight:700}
+  .addfile{display:inline-flex;align-items:center;border:1px dashed var(--border-strong);border-radius:var(--r中);
+    padding:5px 12px;font-size:var(--f1);color:var(--muted);cursor:pointer;margin-top:4px}
+  .addfile:hover{border-color:var(--accent);color:var(--accent)}
+  .props .ctime{color:var(--muted);font-variant-numeric:tabular-nums}
+  .archtag{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn);border-radius:var(--r圆);
+    padding:2px 9px;font-size:var(--f0)}
+
+  @media(max-width:520px){ .cnt{width:100%} .search{min-width:100%} }
+
+  .page-head{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    margin:0 0 var(--s4);flex-wrap:wrap}
+  .page-head h1{font-size:var(--f5);font-weight:650;margin:0;letter-spacing:-.01em}
+  .page-head .today-label{color:var(--muted);font-size:var(--f2);font-variant-numeric:tabular-nums}
+  .page-head .row{display:flex;align-items:center;gap:var(--s3)}
+
+  .tabs-search{display:flex;gap:var(--s4);align-items:center;margin-bottom:var(--s2);flex-wrap:wrap}
+  .tabs{display:flex;align-items:center;gap:var(--s4);min-width:0;flex-wrap:wrap}
+  .tabs .tabrow{display:flex;align-items:center;gap:var(--s2)}
+  .tab{display:inline-flex;align-items:center;gap:5px;color:var(--muted);background:none;border:0;
+    border-bottom:2px solid transparent;padding:5px 0;font-size:var(--f3);font-family:inherit;
+    cursor:pointer;white-space:nowrap}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700}
+  .tab .count{font-variant-numeric:tabular-nums;font-weight:400}
+
+  .scope{border:1px solid var(--线);border-radius:var(--r小);background:var(--面);color:var(--muted);
+    font-size:var(--f1);font-family:inherit;padding:2px 4px;max-width:120px}
+  .search2{margin-left:auto;display:flex;align-items:center;gap:var(--s2);min-width:200px;
+    border:1px solid var(--border);border-radius:var(--r中);padding:4px 9px;color:var(--faint)}
+  .search2 input{border:0;outline:0;background:none;color:var(--text);width:100%;min-width:0;
+    font-size:var(--f2);font-family:inherit}
+
+  .search2:focus-within{border-color:var(--蓝);outline:2px solid var(--蓝);outline-offset:1px}
+
+  .list-note{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);
+    margin:var(--s2) 0 var(--s3);color:var(--muted);font-size:var(--f1);flex-wrap:wrap}
+  .list-note .archsw{display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+
+  .table-box{border:1px solid var(--线);border-radius:var(--r大);overflow:hidden;background:var(--bg)}
+  .table-box .tscroll{overflow-x:auto}
+  .table-foot{display:flex;justify-content:space-between;gap:var(--s3);padding:9px 14px;
+    color:var(--muted);font-size:var(--f1);border-top:1px solid var(--线)}
+
+  table.task-table th{padding:9px 8px;white-space:nowrap}
+  table.task-table td{padding:9px 8px;vertical-align:middle}
+  table.task-table th:first-child,table.task-table td:first-child{padding-left:12px}
+
+  .notetitle-row{display:flex;align-items:stretch;gap:8px}
+
+  input.notetitle{flex:1 1 auto;min-width:0;width:100%;font-size:var(--f3);font-weight:650;padding:7px 2px;
+    border:none;border-bottom:1px solid var(--border);border-radius:0;background:var(--bg);color:var(--text);
+    font-family:inherit;box-sizing:border-box}
+  input.notetitle:focus{outline:none;border-bottom:2px solid var(--accent)}
+  .notetitle::placeholder{color:var(--faint);font-weight:400}
+
+  .aititle-btn{flex:0 0 38px;min-width:38px;border:1px solid var(--accent);border-radius:var(--r小);
+    background:var(--bg);color:var(--accent);font-family:inherit;font-size:var(--f3);font-weight:700;cursor:pointer}
+  .aititle-btn:hover:not(:disabled){background:var(--accent-soft)}
+  .aititle-btn.busy{border-style:dashed;color:var(--muted)}
+  .aititle-btn .符{margin:0}
+  .aititle-btn:disabled{cursor:not-allowed;opacity:.55;border-color:var(--border-strong)}
+  .aititle-result{display:flex;align-items:center;gap:8px;margin:7px 0 12px;padding:6px 9px;
+    border-left:2px solid var(--accent);font-size:var(--f1);line-height:1.45}
+  .aititle-result:empty{display:none}
+  .aititle-result{flex-wrap:wrap}
+  .aititle-wait{flex:1 0 100%;margin:-4px 0 8px}
+  .aititle-wait:empty{display:none}
+  .aibox .aih .模型牌组{margin-left:8px;margin-right:auto}
+  .aibox .aihist{padding:0 16px 10px}
+  .aititle-result.err{border-left:2px solid var(--红);color:var(--muted)}
+  .aititle-result .mark{flex:0 0 auto;font-weight:700}
+  .aititle-result.err .mark{color:var(--红)}
+  .aititle-result .proposal{min-width:0;flex:1;word-break:break-word}
+  .aititle-result .actions{display:inline-flex;gap:6px;flex:0 0 auto}
+  .aititle-result .actions :is(.主钮,.次钮,.危钮){padding:3px 9px}
+
+  #noteBox{width:min(560px,95vw);max-height:calc(100% - 12px);display:flex;flex-direction:column}
+
+  #noteBox{color:var(--字)}
+  #noteBox.lg{width:min(980px,96vw)}
+  #noteBox>.mb{flex:1 1 auto;min-height:0;overflow:auto;display:flex;flex-direction:column}
+
+  #noteMask #noteBox .notetabs{flex-wrap:nowrap;align-items:center;align-content:center;overflow-x:auto;overflow-y:hidden;max-height:none;padding:6px 10px;scrollbar-width:thin}
+
+  #noteMask #noteBox .notetabs>*{flex:none}
+  #noteMask #noteBox .notetabs>.ntab,#noteMask #noteBox .notetabs>.ntmore,#noteMask #noteBox .notetabs>.ntnew{white-space:nowrap}
+  #noteMask #noteBox .ntresize{display:none}
+  #noteMask #noteBox input.notetitle{font-size:var(--f2);font-weight:400;color:var(--muted);padding-top:5px;padding-bottom:5px}
+  #noteMask #noteBox .note-large-only{display:none!important}
+  #noteMask #noteBox.lg .note-large-only:not([hidden]){display:flex!important}
+  #noteMask #noteBox.lg .note-large-actions{align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+  #cardPage #noteBox .note-large-only{display:flex}
+  #cardPage #noteBox .note-large-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+
+  #noteMask #noteBox .note-body-sec{flex:1 0 auto;min-height:190px;margin-bottom:8px}
+  #noteMask #noteBox .note-link-sec{margin:0 0 8px}
+
+  #noteMask #noteBox .note-link-sec .dsec-h{display:none}
+  #noteBox .note-link-sec:has(>[data-cardlinks]>.emptyline:only-child){display:none}
+  #noteBox .notefoot{position:sticky;bottom:0;z-index:2;background:var(--bg);padding-top:8px}
+
+  #noteBox .notefoot{flex-wrap:wrap;justify-content:space-between;gap:4px 6px;container-type:inline-size}
+  #noteBox .note-tools{display:flex;gap:2px;flex:none}
+  #noteBox .notefoot-left{flex:1 1 0;min-width:0;gap:4px 6px}
+
+  #noteBox #noteIdBox{flex:none;display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+  #noteBox #noteIdBox[hidden]{display:none}
+  #noteBox #noteIdBox .id-copy{min-width:28px;padding:0 6px;margin-left:0}
+
+  #noteBox>.mh #noteIdBox{color:var(--muted)}
+  #noteBox>.mh #noteIdBox .id-copy{background:transparent;color:inherit}
+
+  #noteBox #noteSaveState{flex:1 1 0;align-self:stretch}
+
+  #noteBox #noteSaveState.has-fail{display:flex;flex-wrap:nowrap;gap:4px}
+  #noteBox .savefail-head{display:inline-flex;align-items:center;gap:.3em;flex:1000 1 0;max-width:max-content;min-width:0;overflow:hidden;
+    padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;white-space:nowrap}
+  #noteBox .savefail-head>:not(.截一行){flex:none}
+  #noteBox .savefail-head>.截一行{flex:0 1 auto}
+  #noteBox .savefail-head>:is(.截一行,.项数){border-bottom:1px dashed currentColor;line-height:1.3}
+  #noteBox .savefail-head:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  #noteBox .savefail-items{flex:1 1 0;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+
+  #noteBox .savefail-items::before{content:'\200b'}
+  #noteBox #noteSaveState.展开 .savefail-items::before{content:none}
+  #noteBox .savefail-items .savefail-item{vertical-align:middle}
+  #noteBox .savefail-items .savefail-item+.savefail-item{margin-left:4px}
+  #noteBox #noteSaveState .retry{flex:none;margin-left:0}
+
+  @container (max-width:459.98px){ #noteBox #noteSaveState:not(.展开) .retry-长{display:none} }
+
+  #noteBox .notefoot:has(#noteSaveState.展开) .notefoot-left{order:3;flex-basis:100%}
+  #noteBox #noteSaveState.展开{flex-wrap:wrap}
+  #noteBox #noteSaveState.展开 .savefail-items{order:3;flex:1 1 100%;display:flex;flex-wrap:wrap;gap:4px 6px;white-space:normal;overflow:visible}
+  #noteBox #noteSaveState.展开 .savefail-items .savefail-item{margin-left:0}
+
+  @container (max-width:250px){ #noteBox .notefoot-left{order:3;flex-basis:100%} }
+  .nt-ic{display:inline-flex;align-items:center;justify-content:center;min-width:30px;height:30px;padding:0 6px;
+    border:1px solid transparent;border-radius:var(--r小);background:none;color:var(--text);
+    font-family:inherit;font-size:16px;line-height:1;cursor:pointer}
+  .nt-ic:hover:not(:disabled){border-color:var(--border-strong)}
+
+  .nt-ic .线标{width:1.125em;height:1.125em;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .nt-ic:disabled{border-color:transparent;background:none;opacity:.35}
+  .nt-ic:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  .nt-ic.solo-only{display:none}
+  html.solo .nt-ic.solo-only{display:inline-flex}
+
+  #noteMask #noteBox>.mh{padding:3px 6px 3px 12px}
+
+  #noteMask #noteBox .notetabs{padding:3px 8px;gap:4px;flex:none}
+
+  #noteMask #noteBox .notetabs{flex-wrap:wrap;align-content:flex-start;overflow-x:hidden;overflow-y:auto;max-height:calc(3 * 24px + 2 * 4px + 6px)}
+  @media(pointer:coarse){ #noteMask #noteBox .notetabs{max-height:calc(3 * 44px + 2 * 4px + 6px)} }
+
+  @media(pointer:fine){
+    #noteMask #noteBox .notetabs{max-height:max(30px,calc(round(down,var(--ntabs-h,86px) - 1px,28px) + 2px))}
+    #noteMask #noteBox .ntresize{display:block;position:relative}
+    #noteMask #noteBox .ntresize:hover{box-shadow:none}
+    #noteMask #noteBox .ntresize::after{content:'';position:absolute;left:50%;top:50%;width:46px;height:2px;transform:translate(-50%,-50%);
+      border-radius:var(--r圆);background:var(--muted);opacity:.5;transition:opacity .12s,width .12s}
+    #noteMask #noteBox .ntresize:hover::after{opacity:.85;width:64px}
+    #noteMask #noteBox .ntresize:active::after{opacity:1;width:64px}
+  }
+  @supports selector(::-webkit-scrollbar){
+    #noteMask #noteBox .notetabs{scrollbar-width:auto}
+    #noteMask #noteBox .notetabs::-webkit-scrollbar{width:5px}
+    #noteMask #noteBox .notetabs::-webkit-scrollbar-button{display:none}
+    #noteMask #noteBox .notetabs::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:var(--r圆)}
+  }
+  #noteMask #noteBox .notefoot{padding-top:4px}
+
+  @media(pointer:fine){
+    #noteMask #noteBox .mh .ic,#noteMask #noteBox .mh .ic.full{min-width:30px;min-height:30px}
+    #noteMask #noteBox :is(.ntab,.ntnew,.ntmore){min-height:0}
+    #noteMask #noteBox .notetitle{min-height:0}
+    #noteMask #noteBox .nt-ic{min-width:30px;min-height:0}
+    #noteMask #noteBox .notefoot :is(.次钮,.retry){min-height:28px}
+    #noteMask #noteBox .notefoot .retry{padding:0 6px}
+    #noteMask #noteBox .notefoot .savefail-head{min-height:0}
+    #noteMask #noteBox #noteIdBox .id-copy{min-width:28px;min-height:28px}
+  }
+
+  #noteMask #noteBox>.mb{padding-bottom:0}
+  #noteMask #noteBox .notefoot{padding-bottom:6px}
+  #noteBox .doc{padding:6px 8px 6px 0;border-radius:var(--r小);min-height:1.7em}
+  #noteBox .bhandles{position:absolute;left:0;top:3px;justify-content:flex-start;padding-top:0}
+  #noteBox .bbody{padding-left:26px;border-radius:0 var(--r小) var(--r小) 0}
+  #noteBox .block{--edit-line-x:23px}
+  #noteBox .block:focus-within{background:none}
+  #noteBox .block.selblk{background:var(--accent-soft)}
+
+  #noteBox .bgroup::before{display:none}
+
+  #noteBox .ghead{padding-left:10px}
+
+  @media(pointer:fine){
+    #noteMask #noteBox>.mb{padding-left:30px;padding-right:30px}
+    #noteMask #noteBox .doc{padding-right:0}
+    #noteMask #noteBox .bhandles{left:-26px}
+    #noteMask #noteBox .bbody{padding-left:2px;padding-right:2px}
+    #noteMask #noteBox .block{--edit-line-x:-3px}
+    #noteMask #noteBox .dropline{margin-left:0}
+    #noteMask #noteBox .ghead{margin-left:-26px;padding-left:0}
+
+    #noteMask #noteBox .block.selblk{outline-offset:6px;box-shadow:-6px 0 0 var(--accent-soft),6px 0 0 var(--accent-soft)}
+    #noteMask #noteBox .block.selblk::after{left:-6px;right:-6px}
+  }
+
+  #noteBox>.mh #noteTitle{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  #noteBox .btext:empty::before{content:'写点什么,敲一个 / 挑要插什么…'}
+
+  .notefoot{justify-content:space-between;align-items:center}
+  .notefoot-left{display:flex;align-items:center;gap:10px;min-width:0;flex-wrap:wrap}
+  .notectime{font-size:var(--f1);color:var(--faint);font-variant-numeric:tabular-nums}
+
+  .savestate{font-size:var(--f1);color:var(--muted)}
+
+  .savestate.has-fail{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+  .savestate .savefail-item{display:inline-flex;align-items:center;min-height:24px;padding:2px 6px;
+    border:1px dashed var(--border-strong);border-radius:var(--r小);background:var(--面);color:var(--muted)}
+  .savestate .retry{margin-left:8px;border:1px solid var(--border-strong);background:none;color:var(--muted);
+    border-radius:var(--r小);padding:1px 8px;font-family:inherit;font-size:var(--f1);cursor:pointer}
+  .savestate .retry:hover{border-color:var(--accent);color:var(--accent)}
+  #noteBox .dsec{margin-bottom:16px}
+  #noteBox .dsec:last-of-type{margin-bottom:6px}
+
+  #noteBox .chips{display:flex;flex-wrap:wrap;gap:7px}
+  #noteBox [data-cardlinks] .tag{display:flex;max-width:min(100%,480px);min-width:0}
+
+  #noteBox [data-cardlinks] .chip-name{display:block;flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #noteBox [data-cardlinks] .tx{flex:0 0 20px}
+
+  .notetabs{display:flex;align-items:flex-start;align-content:flex-start;gap:6px;flex-wrap:wrap;
+    padding:8px 14px 4px;background:var(--面);
+    max-height:var(--ntabs-h,none);overflow-y:auto;overscroll-behavior:contain}
+  .notetabs:empty{display:none}
+
+  .ntresize{height:10px;background:var(--面);border-bottom:1px solid var(--线);cursor:ns-resize;
+    touch-action:none;user-select:none}
+  .ntresize:hover,.ntresize:focus-visible{box-shadow:inset 0 -3px 0 var(--accent)}
+  .ntresize:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  #noteBox .mb{padding-top:2px}
+
+  @media(max-width:560px),(pointer:coarse){
+    .ntresize{height:14px}
+    .notetitle{min-height:44px}
+    .aititle-btn{min-width:44px;min-height:44px}
+    .aititle-result{align-items:flex-start;flex-wrap:wrap}
+    .aititle-result .actions{width:100%}
+    .aititle-result .actions :is(.主钮,.次钮,.危钮){min-height:44px;flex:1}
+    .savestate .retry{min-height:44px;padding:0 14px;display:inline-flex;align-items:center}
+    .ntab,.ntnew,.ntmore{min-height:44px}
+    .ntab{padding:0 10px}
+    #noteBox :is(.主钮,.次钮,.危钮),#noteBox .addbtn{min-height:44px}
+    #noteBox .nt-ic,#noteBox #noteIdBox .id-copy{min-width:44px;min-height:44px}
+    #noteBox .savefail-head{min-height:44px}
+    #noteBox .mh .ic{min-width:44px;min-height:44px}
+  }
+  .ntab{display:inline-flex;align-items:center;gap:5px;max-width:8em;height:24px;padding:0 8px;
+    border-radius:var(--r小);border:1px solid transparent;background:var(--bg);
+    font-size:var(--f1);color:var(--muted);cursor:pointer;white-space:nowrap}
+  .ntab .nt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ntab:hover{border-color:var(--边);color:var(--text)}
+  .ntab.on{background:var(--蓝);color:var(--反字);font-weight:650;border-color:var(--蓝)}
+  .ntab.pin{border-color:var(--border-strong)}
+  .ntab.on.pin{border-color:#fff}
+  .ntab .np{flex:none;font-size:var(--f0);opacity:0;line-height:1;display:inline-flex}
+
+  .ntab .np .线标{width:1.3em;height:1.3em;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .ntab.pin .np .线标 path:first-child{fill:currentColor}
+  .ntab:hover .np{opacity:.45}
+  .ntab.pin .np,.ntab .np:hover{opacity:1}
+  .ntmore{border:none;background:none;font-family:inherit;font-size:var(--f1);color:var(--muted);
+    cursor:pointer;padding:0 4px;text-decoration:underline}
+  .ntmore:hover{color:var(--蓝)}
+  .ntnew{border:1px dashed var(--border-strong);background:none;font-family:inherit;font-size:var(--f1);
+    color:var(--muted);cursor:pointer;height:24px;padding:0 9px;border-radius:var(--r小)}
+  .ntnew:hover{border-color:var(--蓝);color:var(--蓝)}
+
+  .task-title{font-weight:600;color:var(--text);cursor:pointer;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .task-title:hover{color:var(--accent)}
+
+  table.task-table tr:hover .cop .op-link{opacity:1}
+
+  .stars i,.stars button{font-style:normal;color:var(--star)}
+  .stars i.off,.stars button.off{color:var(--边)}
+
+  .late{color:var(--warn);white-space:nowrap;font-size:var(--f0);margin-top:2px}
+
+  table.task-table .cstar{width:96px}
+
+  table.task-table .cmatter{width:26%;min-width:230px;max-width:0}
+  table.task-table.列宽定 .cmatter{max-width:none;min-width:0}
+
+  table.task-table .cid{width:72px;white-space:nowrap;cursor:pointer}
+  table.task-table td.cid .编号{display:inline-block;line-height:1.3}
+  .id-copy{margin-left:6px;min-height:28px;padding:0 8px;font-size:var(--f1)}
+  @media(pointer:coarse){table.task-table td.cid{min-width:44px;height:44px}.id-copy{min-height:44px}}
+  table.task-table .csub{width:84px;white-space:nowrap}
+  table.task-table .cprog{width:130px}
+  table.task-table .cprog .tprog{margin:0}
+  table.task-table td[data-col="关联标签"],table.task-table th[data-col="关联标签"]{width:30%}
+  table.task-table td[data-col="计划完成"],table.task-table th[data-col="计划完成"]{width:120px}
+  table.task-table td[data-col="状态"],table.task-table th[data-col="状态"]{width:118px}
+  table.task-table .cctime{width:120px}
+
+  table.task-table th.cctime{white-space:nowrap}
+  table.task-table th.可排{cursor:pointer;user-select:none}
+  table.task-table th.可排 .排向{margin-left:4px}
+
+  #tb td .空{box-sizing:border-box;max-width:min(100%,calc(100vw - 54px));
+    position:sticky;left:0}
+
+  .tag:not(.t灰){
+    color:var(--text);background:var(--bg);border:1px solid var(--边);border-radius:var(--r小)}
+  .tag:hover{border-color:var(--accent)}
+
+  .tag.nolink:hover,.tag.dangling:hover{border-color:var(--边)}
+
+  .tag.dangling{color:var(--muted);border-style:dashed;text-decoration:line-through;cursor:not-allowed}
+  .tab[disabled]{opacity:.45;cursor:default;border-bottom-color:transparent}
+  .tab[disabled]:hover{color:var(--muted)}
+
+  #homeView.hidden,#listView.hidden,#detailView.hidden{display:none}
+  #detailView{padding-top:2px;padding-left:26px}
+  .crumb{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:var(--f1);color:var(--muted);margin:0 0 8px}
+  .crumb a{color:var(--accent);text-decoration:none;text-underline-offset:2px;cursor:pointer}
+  .crumb a:hover,.crumb a:focus-visible{text-decoration:underline}
+  .crumb a:visited{color:var(--accent)}
+  .crumb .sep{color:var(--faint)}
+
+  .detail-save-fail{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 12px;padding:9px 10px;
+    border:1px solid var(--border-strong);border-left:3px solid var(--红);border-radius:var(--r小);background:var(--面)}
+  .detail-save-fail.hidden{display:none}
+  .detail-save-fail .detail-save-msg{flex:1 1 260px;min-width:0;color:var(--muted);font-size:var(--f1)}
+  .detail-save-fail .detail-save-msg b{color:var(--text)}
+  .detail-save-fail .detail-save-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .dhead{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0 0 16px}
+  #detailView .dhead{border-bottom:1px solid var(--线);padding-bottom:12px}
+  .dtitle-row{display:flex;align-items:flex-start;gap:8px;flex:1 1 260px;min-width:0;flex-wrap:wrap}
+  .dhead .dtitle{flex:1 1 auto;min-width:0;font-size:var(--f5);font-weight:650;margin:0;line-height:var(--lh密);
+    padding:3px 5px;border:none;border-bottom:1px solid var(--线);border-radius:0;outline:none}
+  .dhead .dtitle:hover{border-color:var(--线)}
+  .dhead .dtitle:focus{border-bottom:2px solid var(--accent);background:var(--面)}
+  #detailView .dhead .dtitle{padding:3px 5px 3px 0;margin-left:-1px}
+  .dacts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .act3row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .次钮.act3{flex:1 1 96px;min-width:96px;display:inline-flex;align-items:center;justify-content:center;
+    text-align:center;border-style:dashed}
+  .次钮.act3.arch.on{border-style:solid;font-weight:650}
+  .dhead>.aititle-result{flex:1 0 100%;margin:-4px 0 0}
+
+  .dgrid{display:grid;grid-template-columns:minmax(0,1fr) var(--dside-w,272px);gap:24px;align-items:start}
+  .dmain{min-width:0}
+  .dside{min-width:0;padding-left:18px;position:relative}
+  .dresize{position:absolute;left:-12px;top:0;bottom:0;width:10px;cursor:ew-resize;touch-action:none}
+  .dresize::before{content:'';position:absolute;left:4px;top:0;bottom:0;width:1px;background:var(--线)}
+  .dresize:hover::before,.dresize:focus-visible::before{left:3px;width:3px;background:var(--accent)}
+  .dresize:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+  #detailView .bhandles{position:absolute;left:-26px;top:3px;justify-content:flex-start;padding-top:0}
+  #detailView .block{--edit-line-x:-3px}
+  #detailView .bbody{padding-left:0}
+  #detailView .dropline{margin-left:0}
+  @media(max-width:900px){
+    .dgrid{grid-template-columns:minmax(0,1fr);gap:16px}
+    .dside{border-left:none;border-top:1px solid var(--线);padding-left:0;padding-top:14px}
+    .dresize{display:none}
+    #detailView{padding-left:0}
+    #detailView .bhandles{position:static;width:24px;flex:0 0 24px;padding-top:3px;justify-content:flex-end}
+    #detailView .bbody{padding-left:4px}
+  }
+
+  .dsec{margin:0 0 22px}
+  .dsec-h{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding-bottom:6px;border-bottom:1px solid var(--线);margin-bottom:9px}
+  .dsec-h b{font-size:var(--f3);font-weight:650}
+  .dsec-h .cnt{font-weight:400;color:var(--muted)}
+  .dsec-h .acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+  .emptyline{color:var(--faint);font-size:var(--f1);padding:10px 2px}
+
+  .dside .sf{padding:14px 0;border-bottom:1px solid var(--线)}
+  .dside .sf:first-child,.dside .dresize + .sf{padding-top:0}
+  .dside .sf:last-child{border-bottom:none}
+  .dside .sf-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+  .dside .sf-h b{font-size:var(--f2);font-weight:650}
+  .dside .sf-h .form-tag{font-size:var(--f1);color:var(--muted);font-weight:400}
+  .dside .sf-note{display:block;font-size:var(--f0);color:var(--faint);margin:-4px 0 8px}
+  .dside .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dside .sl{display:block;font-size:var(--f0);color:var(--faint);margin:0 0 4px}
+  .dside .sv{font-size:var(--f2)}
+  .dside .sv.ctime{color:var(--muted);font-variant-numeric:tabular-nums}
+  .dside input[type=date],.dside input[type=number]{width:100%}
+  .dside .chips{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+  .dside .chips .tag{max-width:100%}
+
+  .sf-acts .dacts{display:flex;flex-wrap:nowrap;gap:4px;align-items:stretch;width:100%}
+  .sf-acts .dacts :is(.主钮,.次钮,.危钮){min-width:0;width:auto;flex:1 1 0;padding-left:4px;padding-right:4px;font-size:var(--f0)}
+  .ai-original details summary{cursor:pointer;color:var(--muted);font-size:var(--f1)}
+  .ai-original-text{margin-top:8px;white-space:pre-wrap;word-break:break-word;font-size:var(--f1);line-height:var(--lh正)}
+
+  #cardBox{width:min(560px,95vw);max-height:calc(100% - 12px);display:flex;flex-direction:column}
+  #cardBox.lg{width:min(980px,96vw)}
+  #cardBox .mb{flex:1 1 auto;min-height:0}
+  #cardBox.sm .dgrid{grid-template-columns:minmax(0,1fr)}
+  #cardBox.sm .dside{display:none}
+  #cardBox.lg .card-link-sm{display:none}
+  #cardPage #cardBox .card-link-sm{display:none}
+
+  html.无关联 .dsec:has([data-cardlinkadd]),html.无关联 .sf:has([data-cardlinkadd]),html.无关联 .sf:has([data-linkedit]),
+  html.无关联 [data-col="关联标签"],html.无关联 [data-col-item="关联标签"],html.无关联 label.fld:has(#fLink),
+  html.无关联 [data-ai="link"],html.无关联 [data-card-ai="link"]{display:none!important}
+
+  html.无关联 [data-cardlinkadd],.本条无关联 [data-cardlinkadd],.本条无关联 :is(.dsec,.sf):has([data-cardlinkadd]),
+  html.无AI :is([data-ai-title],[data-ai-title-result],[data-ai速记],[data-ai],[data-card-ai],[data-card-manage]),
+  html.无AI .sf:has([data-ai-restore]){display:none!important}
+  html.embed .设置钮{display:none}
+  html[data-shell-settings="menu"] .设置钮{display:none}
+  .设置卡{width:min(420px,94vw)}
+  .设置项{display:flex;gap:10px;align-items:flex-start;padding:8px 0;cursor:pointer}
+  .设置项 input{margin-top:3px;flex:none}
+  .设置项 small{display:block;color:var(--muted);font-size:var(--f0);margin-top:2px}
+  .设置说{margin-top:6px;color:var(--muted);font-size:var(--f0)}
+  @media(pointer:coarse){.设置项{min-height:44px;align-items:center}.设置项 input{margin-top:0;width:22px;height:22px}}
+
+  #cardBox .card-core-sm{display:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 14px}
+  #cardBox.sm .card-core-sm{display:grid}
+  #cardBox.sm .card-core-sm .sl{display:block;font-size:var(--f0);color:var(--faint);margin:0 0 4px}
+  #cardBox.sm .card-core-sm input[type=date],#cardBox.sm .card-core-sm select{width:100%}
+  #cardBox.sm #cardDueBox{margin-top:0!important}
+  #cardBox .card-sub-sm{display:none;align-items:center;justify-content:space-between;gap:8px;margin:0 0 12px;padding:7px 0;border-top:1px solid var(--线);border-bottom:1px solid var(--线);font-size:var(--f1)}
+  #cardBox.sm .card-sub-sm.on{display:flex}
+  #cardBox .card-sub-sm .acts{display:flex;gap:6px;flex-wrap:wrap}
+  #cardBox.sm .cardmatter{font-size:var(--f3);min-height:34px}
+  #cardBox .card-save-state{margin-left:auto}
+  #cardBox .card-body-head .acts{margin-left:auto}
+  @media(max-width:560px){
+    #cardBox .card-core-sm{grid-template-columns:1fr 1fr}
+    #cardBox .card-core-sm>#cardDueSlotSm{grid-column:1/-1}
+  }
+
+  #cardBox.lg .dsec .doc,#cardPage #cardBox .dsec .doc{min-height:300px}
+
+  #cardBox .card-sub .subrow,#detailView .dside .subrow{gap:6px}
+  #cardBox .card-sub .subrow .sname,#detailView .dside .subrow .sname{font-size:var(--f1)}
+  #cardBox .card-sub .sf-h,#detailView .dside .card-sub .sf-h{gap:6px}
+  #cardBox .chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:8px}
+  #cardBox .dside{border-left:1px solid var(--线)}
+  #cardBox .dsec{margin-bottom:16px}
+  #cardBox .cardfoot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+    padding:10px 14px;border-top:1px solid var(--线);background:var(--面);flex:none}
+  #cardBox .cardfoot .grow{flex:1 1 auto}
+  #cardBox .mh .ic.full{font-size:var(--f2)}
+
+  #noteBox .mh .ic.full,#cardBox .mh .ic.full{min-width:44px;min-height:44px}
+  @media(max-width:560px),(pointer:coarse){
+    #noteBox .mh .ic.full,#cardBox .mh .ic.full{display:inline-flex;align-items:center;justify-content:center}
+  }
+
+  #cardPage.hidden{display:none}
+  #cardPage{padding-top:2px}
+  #cardPage #cardBox,#cardPage #noteBox{width:auto;max-width:none;max-height:none;border:none;box-shadow:none;
+    border-radius:0;background:transparent}
+  #cardPage #cardBox .mh,#cardPage #noteBox .mh{background:transparent;border-bottom:none;padding:0 0 6px}
+  #cardPage #cardBox .mb,#cardPage #noteBox .mb{padding:0;overflow:visible}
+  #cardPage #cardBox .cardfoot{background:transparent;padding:14px 0 0}
+  #cardPage #noteBox .dsec .doc{min-height:300px}
+
+  .cardmatter{font-size:var(--f4);font-weight:650;line-height:var(--lh正);padding:7px 2px;
+    border:none;border-bottom:1px solid var(--边);border-radius:0;outline:none;min-height:38px;background:var(--bg)}
+  .cardmatter:focus{border-bottom:2px solid var(--accent);background:var(--面)}
+  .cardmatter:empty::before{content:attr(data-ph);color:var(--faint);font-weight:400}
+  #cardBox.lg .cardmatter,#cardPage .cardmatter{font-size:var(--f5);border-color:transparent}
+  #cardBox.lg .cardmatter:hover,#cardPage .cardmatter:hover{border-color:var(--线)}
+
+  .subrow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid var(--线);
+    font-size:var(--f2)}
+  .subrow:last-child{border-bottom:none}
+  .subrow .sck{flex:none;width:15px;height:15px;cursor:pointer}
+
+  .subrow .sid{flex:none;white-space:nowrap;font-size:var(--f1)}
+  .subrow .sname{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    cursor:pointer}
+  .subrow .sname:hover{color:var(--蓝);text-decoration:underline}
+  .subrow.done .sname{color:var(--muted);text-decoration:line-through}
+  .subrow .sdue{color:var(--muted);font-variant-numeric:tabular-nums;font-size:var(--f1);white-space:nowrap}
+  .subrow .sdue.od{color:var(--warn);font-weight:600}
+  .subrow .sx{color:var(--faint);cursor:pointer;padding:0 3px;flex:none}
+  .subrow .sx:hover{color:var(--warn)}
+  .subbar{height:5px;border-radius:var(--r小);background:var(--surface-2,var(--面));overflow:hidden;
+    border:1px solid var(--线);margin:0 0 9px}
+  .subbar b{display:block;height:100%;background:var(--蓝)}
+
+  .task-table tr.subr>td.cmatter{padding-left:34px;position:relative}
+  .task-table tr.subr>td.cmatter::before{content:"";position:absolute;left:18px;top:8px;bottom:8px;
+    border-left:2px solid var(--边)}
+  .task-table tr.subr{background:var(--面)}
+  .task-table .kidmore{color:var(--蓝);cursor:pointer;font-size:var(--f1)}
+  .task-table .kidmore:hover{text-decoration:underline}
+
+  .csub{width:56px;text-align:center}
+  .caddsub{width:72px;text-align:center}
+  .cfile{white-space:nowrap;cursor:pointer}
+  .cfile .fcnt{font-size:var(--f1);color:var(--muted);font-variant-numeric:tabular-nums}
+  .cfile .fcnt+.fcnt{margin-left:8px}
+  .addsub{border:1px dashed var(--边);background:none;color:var(--muted);border-radius:var(--r小);
+    width:26px;height:24px;line-height:1;padding:0;font-size:var(--f2);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center}
+  .addsub:hover,.addsub:focus{border-color:var(--蓝);color:var(--蓝)}
+
+  .subtog{border:none;background:none;color:var(--蓝);cursor:pointer;font:inherit;font-size:var(--f1);
+    padding:0 4px;min-height:24px;font-variant-numeric:tabular-nums}
+  .subtog:hover,.subtog:focus{text-decoration:underline}
+  .subis{color:var(--muted);font-size:var(--f2)}
+
+  .ctx-mark{font-size:var(--f0);color:var(--muted);white-space:nowrap}
+
+  .tag .tag-src{color:var(--muted);margin-right:4px;padding-right:4px;border-right:1px solid var(--border)}
+
+  .tag.可跳{border-color:var(--蓝);color:var(--蓝);font-weight:600}
+  .tag.可跳 .tag-src,.tag.可跳 .tag-id{color:var(--蓝);border-right-color:var(--蓝浅)}
+  .tag.可跳 .跳记{font-size:12px;font-weight:700;margin-left:2px}
+  .tag.不可跳{background:var(--面);color:var(--次)}
+
+  .tag .tag-id{font-family:var(--mono,ui-monospace,monospace);margin-right:4px;padding-right:4px;border-right:1px solid var(--border);white-space:nowrap}
+  .tag .tag-id.none-id{font-family:inherit;color:var(--muted)}
+
+  .tag.chipedit .tx{margin-left:6px;padding-left:8px;border-left:1px solid var(--border)}
+  @media(pointer:coarse){
+    .tag.chipedit{min-height:44px;padding-top:0;padding-bottom:0}
+    .tag.chipedit .chip-name{align-self:stretch;line-height:44px}
+    .tag.chipedit .tx,#noteBox [data-cardlinks] .tag.chipedit .tx{flex:0 0 44px;min-width:44px;align-self:stretch;line-height:44px;text-align:center}
+  }
+
+  #aiMask .modal{width:min(680px,94vw)}
+  #lkMask .modal{width:min(760px,95vw)}
+  .prop-src{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    font-size:var(--f1);color:var(--muted);padding-bottom:9px;border-bottom:1px solid var(--线)}
+  .prop-hint{font-size:var(--f1);color:var(--faint);margin:7px 0 0}
+
+  .prop-cats{display:flex;flex-wrap:wrap;gap:6px;margin:9px 0 0}
+  .prop-cats .pc{border:1px dashed var(--border-strong);background:var(--bg);color:var(--muted);
+    border-radius:var(--r圆);padding:4px 11px;font-size:var(--f1);font-family:inherit;cursor:pointer;white-space:nowrap}
+  .prop-cats .pc:hover{border-color:var(--accent);color:var(--accent)}
+  .prop-cats .pc.on{border-style:solid;border-color:var(--accent);background:var(--accent-soft);
+    color:var(--accent);font-weight:650}
+  @media(max-width:560px),(pointer:coarse){ .prop-cats .pc{min-height:44px} }
+
+  #aiMask .prop-item[hidden]{display:none}
+  .prop-items{max-height:min(48vh,420px);overflow:auto}
+  #aiMask .prop-item{display:flex;gap:11px;align-items:flex-start;padding:11px 2px;
+    border-bottom:1px solid var(--线);cursor:pointer;font-size:var(--f3);color:var(--text);margin:0}
+  #aiMask .prop-item:hover{background:var(--面)}
+  #aiMask .prop-item>input{flex:none;margin-top:2px}
+  #aiMask .prop-item .pi-b{display:block;flex:1 1 auto;min-width:0}
+  #aiMask .prop-item .pi-t,#aiMask .prop-item .pi-s,#aiMask .prop-item .pi-why{display:block}
+  .prop-item .pi-t{font-weight:600;font-size:var(--f2)}
+  .prop-item .pi-s{font-size:var(--f1);color:var(--muted);margin-top:3px}
+  .prop-item .pi-w{font-size:var(--f1);color:var(--蓝);cursor:pointer;white-space:nowrap;
+    background:none;border:none;padding:2px 0}
+  .prop-item .pi-why.hidden{display:none}
+  .prop-item .pi-why{font-size:var(--f1);color:var(--muted);margin-top:6px;padding:7px 9px;
+    background:var(--面);border:1px solid var(--线);border-radius:var(--r小)}
+  .prop-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}
+  .prop-foot .picked{font-size:var(--f1);color:var(--muted)}
+  .prop-foot .fbtns{display:flex;gap:8px}
+  .emptybox{border:1px dashed var(--线);border-radius:var(--r小);background:var(--面);
+    padding:14px;color:var(--muted);font-size:var(--f1);line-height:var(--lh松)}
+  .emptybox b{color:var(--text)}
+
+  .lkgrid{display:grid;grid-template-columns:150px minmax(0,1fr);gap:0}
+  .lkrail{border-right:1px solid var(--线);padding-right:12px}
+  .lkrail .reltab{flex:none;text-align:left;padding:8px 10px;margin-bottom:2px;border:1px solid transparent}
+  .lkrail .reltab small{display:block;font-size:var(--f0);color:var(--faint);font-weight:400;margin-top:1px}
+
+  .lkrail .reltab.on{border-color:transparent;border-left:3px solid var(--accent);
+    background:var(--accent-soft);color:var(--accent);font-weight:650;padding-left:8px}
+  .lkbody{padding-left:14px;min-width:0}
+  .lklist{max-height:min(46vh,340px);overflow:auto}
+
+  .lktab{width:100%;min-width:0;border-collapse:collapse;font-size:var(--f1)}
+  .lktab th{position:sticky;top:0;background:var(--bg);text-align:left;font-weight:600;color:var(--muted);
+    font-size:var(--f0);padding:6px 8px;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+  .lktab td{padding:7px 8px;border-bottom:1px solid var(--线);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lktab tr.lktr{cursor:pointer}
+  .lktab tr.lktr:hover td{background:var(--面)}
+  .lktab tr.挂过{cursor:default;color:var(--faint)}
+  .lktab td.lk-ck,.lktab th.lk-ck{width:1%;max-width:none;overflow:visible;white-space:nowrap}
+  .lktab .lk-ck input{margin:0;vertical-align:middle}
+  .lktab .lk-ck small{margin-left:4px;font-size:var(--f0);color:var(--faint)}
+  .lktab .lk-id{font-variant-numeric:tabular-nums;color:var(--muted)}
+
+  #lkMask .modal{position:relative}
+  .lkset{position:absolute;top:48px;right:12px;z-index:5;width:min(300px,calc(100% - 24px));max-height:calc(100% - 60px);overflow:auto;
+    background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r中);box-shadow:0 8px 24px rgba(0,0,0,.18);padding:10px 12px}
+  .lkset[hidden]{display:none}
+  .lkset .ls-h{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .lkset .ls-h b{flex:1 1 auto;font-size:var(--f2)}
+  .lkset .ls-t{font-size:var(--f0);color:var(--muted);font-weight:600;margin:8px 0 4px}
+  .lkset .ls-row{display:flex;align-items:center;gap:8px;padding:4px 6px;border:1px solid var(--线);border-radius:var(--r小);
+    margin-bottom:3px;background:var(--bg);font-size:var(--f1)}
+  .lkset .ls-row.off .ls-name{color:var(--faint);text-decoration:line-through}
+  .lkset .ls-row.拖中{opacity:.45}
+  .lkset .ls-row.落点{border-style:dashed;border-color:var(--accent)}
+  .lkset .ls-drag{cursor:grab;color:var(--muted);user-select:none;padding:0 2px}
+  .lkset .ls-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lkset .ls-eye{border:1px solid var(--线);background:none;border-radius:var(--r小);min-width:30px;min-height:26px;cursor:pointer;font-size:var(--f1)}
+  .lkset .ls-mv{display:none;gap:4px}
+  .lkset .ls-mv button{border:1px solid var(--线);background:none;border-radius:var(--r小);min-width:30px;min-height:26px;cursor:pointer;color:var(--text)}
+  .lkset .ls-mv button:disabled{opacity:.35;cursor:default}
+  .lkset .ls-note{margin-top:8px;font-size:var(--f0);color:var(--faint)}
+
+  #lkMask .mh .lkset-btn{width:auto;padding:0 8px;font-size:var(--f1);font-weight:500;white-space:nowrap}
+  @media(max-width:560px),(pointer:coarse){
+    .lkset .ls-drag{display:none}
+    .lkset .ls-mv{display:inline-flex}
+    .lkset .ls-mv button,.lkset .ls-eye,.lkset .ls-h button{min-width:44px;min-height:44px}
+    #lkMask .mh .ic{min-width:44px;min-height:44px}
+    .lkfil select,.lkfil input,.lkfil [data-x],.lkfil [data-add]{min-height:44px}
+    .lkfil [data-x],.lkfil [data-add]{min-width:44px}
+    .lkset .ls-row{padding:2px 6px}
+  }
+
+  @media (pointer:fine) and (max-width:900px){
+    .lktab{font-size:var(--f0)}
+    .lktab th{padding:3px 6px}
+    .lktab td{padding:3px 6px;max-width:170px}
+    .lkrail .reltab{padding:5px 8px}
+    .lklist{max-height:min(54vh,340px)}
+    .lkset{padding:8px 10px}
+    .lkset .ls-row{padding:2px 5px;font-size:var(--f0);margin-bottom:2px}
+    .lkset .ls-t{margin:6px 0 3px}
+    .lkset .ls-note{margin-top:6px}
+    .lksearch{margin-bottom:6px}
+    .lkfil{margin-bottom:4px;gap:5px}
+    .lkfil .advrow select,.lkfil .advrow input,.lkfil .fnote{font-size:var(--f0)}
+  }
+  .history-grid{display:grid;grid-template-columns:minmax(150px,210px) minmax(0,1fr);gap:12px;min-height:260px}
+  .history-grid>[data-history-list]{max-height:52vh;overflow:auto}
+  .history-row{display:flex;width:100%;flex-direction:column;gap:3px;text-align:left;padding:8px;
+    border:0;border-bottom:1px solid var(--线);background:none;color:var(--text);font-family:inherit;cursor:pointer}
+  .history-row:hover,.history-row:focus-visible{background:var(--面);outline:2px solid var(--accent);outline-offset:-2px}
+  .history-row span{color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  [data-history-preview]{margin:0;padding:10px;border:1px solid var(--线);border-radius:var(--r中);
+    background:var(--面);color:var(--text);white-space:pre-wrap;word-break:break-word;overflow:auto;max-height:52vh}
+  @media(max-width:640px){.history-grid{grid-template-columns:minmax(0,1fr)}[data-history-preview]{max-height:34vh}}
+
+  .lkfil{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin:0 0 6px}
+  .lkfil .advrow{margin-bottom:0}
+  .lkfoot{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+  .lkfil .advrow input[type=text]{min-width:80px;flex:0 1 130px}
+  .lkfil .fnote{color:var(--muted);font-size:var(--f1)}
+  .lksearch{width:100%;margin-bottom:8px}
+  @media(max-width:640px){.lkgrid{grid-template-columns:minmax(0,1fr)}
+    .lkrail{border-right:none;border-bottom:1px solid var(--线);padding:0 0 8px;margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap}
+    .lkrail .reltab{flex:1 1 auto;text-align:center}
+    .lkrail .reltab small{display:none}
+    .lkbody{padding-left:0}}
+
+  @media(max-width:560px),(pointer:coarse){
+    #detailView :is(.主钮,.次钮,.危钮),#detailView .addbtn,#aiMask :is(.主钮,.次钮,.危钮),#lkMask :is(.主钮,.次钮,.危钮){min-height:44px}
+    #detailView .stsel,#detailView input[type=date],#detailView input[type=number]{min-height:44px}
+    #detailView textarea[data-cmttext]{min-height:64px}
+    #detailView .crumb a,#detailView .subrow .sname,#detailView .frow a,
+    #detailView .cmt .cx,.cmt .cacts button,#detailView .frow .fx{display:inline-flex;align-items:center;min-height:44px}
+    #aiMask .prop-item>input{width:22px;height:22px}
+    #aiMask .mh .ic,#lkMask .mh .ic,#aiMask .prop-item .pi-w{min-width:44px;min-height:44px}
+    #lkMask .reltab{min-height:44px;display:flex;flex-direction:column;justify-content:center}
+    #lkMask .lksearch{min-height:44px}
+
+    #detailView .stars{display:inline-flex;align-items:center;margin:-11px -5px}
+    #detailView .stars i,#detailView .stars button{display:inline-flex;align-items:center;justify-content:center;
+      min-width:44px;min-height:44px;font-style:normal}
+    #aiMask .prop-item{min-height:44px}
+    #lkMask .lktab td{height:44px}
+    #lkMask .lktab .lk-ck input{width:22px;height:22px}
+    .sf-acts .dacts{width:100%}
+  }
+
+  @media(max-width:560px),(pointer:coarse){
+    .bktable-tools button,.bktable-addrow{min-width:44px;min-height:44px;padding:0 12px}
+    .bkfile a{display:inline-flex;align-items:center;justify-content:center;
+      min-width:44px;min-height:44px}
+    .bkdate input{min-height:44px}
+
+    #btnNote,#btnAdd,#moreBtn{min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+    .tab{min-width:44px;min-height:44px;justify-content:center}
+    .scope{min-width:44px;min-height:44px}
+    .search2{min-height:44px}
+    .bhandles{width:44px;flex:0 0 44px}
+    .bh{width:44px;height:44px;min-width:44px;min-height:44px}
+    .block{--edit-line-x:47px}
+
+    #detailView .bhandles{width:44px;flex:0 0 44px}
+    #detailView .block{--edit-line-x:47px}
+    #noteBox .bbody{padding-left:46px}
+    #noteBox .block{--edit-line-x:45px}
+    .addrow{padding-left:46px}
+    .dropline{margin-left:46px}
+    .bgroup::before{left:41px}
+    .ghead{padding-left:38px}
+    .blockmenu button{min-width:44px;min-height:44px;display:flex;align-items:center}
+
+    .空 :is(.主钮,.次钮,.危钮){min-height:44px}
+  }
+
+  @media (pointer:fine) and (max-width:900px){
+    .bhandles{width:24px;flex:0 0 24px}
+    .bh{width:20px;height:22px;min-width:20px;min-height:22px}
+    .block{--edit-line-x:27px}
+    #detailView .bhandles{width:24px;flex:0 0 24px}
+    #detailView .block{--edit-line-x:27px}
+    #noteBox .bbody{padding-left:26px}
+    #noteBox .block{--edit-line-x:23px}
+    .addrow{padding-left:26px}
+    .dropline{margin-left:26px}
+    .bgroup::before{left:21px}
+    .ghead{padding-left:18px}
+  }
+
+  @media (pointer:coarse){
+    .ntab .np{opacity:.45}
+    .bktable-edit{display:inline-flex;align-items:center;justify-content:center}
+    .bktable-delete{display:none}
+    .bktable-editing .bktable-delete{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  }
+
+  @media(max-width:560px),(pointer:coarse){
+    #listView .视图单 .view-rename button,#listView .view-form button{min-width:44px;min-height:44px}
+  }
+
+  :root{
+    --astra-ink:var(--字);
+    --astra-muted:var(--次);
+    --astra-line:var(--线);
+    --astra-soft:var(--面);
+    --astra-hover:var(--面2);
+    --astra-accent:var(--蓝);
+  }
+  body{overflow-x:hidden}
+
+  .astra-head-acts{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .astra-head-acts :is(.主钮,.次钮,.危钮){min-height:40px;padding:0 14px}
+  .embed #homeView{display:none!important}
+  .wrap{padding:0 28px 56px}
+
+  .astra-home{max-width:792px;margin:0 auto;padding:54px 0 80px}
+  .astra-home-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:18px}
+  .astra-eyebrow{margin:0 0 6px;color:var(--astra-muted);font-size:var(--f3);line-height:1.4}
+  .astra-home h1{font-size:30px;line-height:1.22;letter-spacing:-.025em;margin:0;font-weight:760}
+  .astra-home-count{color:var(--astra-muted);font-size:var(--f3);white-space:nowrap;padding-bottom:4px}
+  .astra-home-list{border-top:1px solid var(--astra-line)}
+  .astra-home-row{border-bottom:1px solid var(--astra-line)}
+  .astra-home-open{
+    width:100%;min-height:94px;border:0;background:var(--bg);text-align:left;color:inherit;
+    display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;
+    padding:17px 4px;cursor:pointer;font:inherit;
+  }
+  .astra-home-open:hover{background:linear-gradient(90deg,transparent 0,var(--面) 7%,var(--面) 93%,transparent 100%)}
+  .astra-home-copy{min-width:0}
+  .astra-home-title{display:block;font-size:17px;line-height:1.45;font-weight:680;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .astra-home-excerpt{display:block;margin-top:5px;color:var(--次);font-size:14px;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .astra-home-meta{display:flex;align-items:center;justify-content:flex-end;gap:12px;color:var(--次);font-size:12px;white-space:nowrap}
+  .astra-home-meta .stars{pointer-events:none}
+  .astra-home-row.done .astra-home-title{text-decoration:line-through;color:var(--弱)}
+  .astra-home-editor{padding:4px 4px 20px}
+  .astra-home-editor .home-editor-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 0}
+  .astra-home-editor .dsec{margin:0;background:var(--面);border:1px solid var(--线);border-radius:var(--r大);padding:14px 16px}
+  .astra-home-editor .doc{min-height:120px}
+  .astra-home-editor .home-editor-foot{display:flex;align-items:center;gap:8px;justify-content:flex-end;padding-top:10px}
+  .astra-home-editor .home-editor-state{margin-right:auto;color:var(--astra-muted);font-size:12px}
+  .astra-home-loading{padding:18px 4px;color:var(--astra-muted);font-size:var(--f3)}
+  .astra-home-empty{padding:34px 0;border-top:1px solid var(--astra-line);color:var(--astra-muted);display:flex;align-items:center;gap:12px}
+
+  #listView{max-width:none;margin:0;padding-top:28px}
+  #listView .表名 .today-label{color:var(--次);font-size:var(--f1)}
+  #listView .tabs-search{margin:0 0 8px;padding:0}
+  #listView .tabs{gap:2px}
+  #listView .tab{border-radius:var(--r中);border:0;background:transparent;min-height:40px;padding:0 11px}
+  #listView .tab.active{background:var(--面2);color:var(--astra-ink)}
+
+  .tab .caret{font-size:10px;margin-left:1px;padding:0 1px;opacity:.7}
+  .tab:hover .caret{opacity:1}
+  .scope-menu{position:absolute;z-index:60;min-width:130px;padding:4px;background:var(--bg);border:1px solid var(--边);
+    border-radius:var(--r中);box-shadow:0 6px 20px rgba(16,24,40,.14);display:flex;flex-direction:column}
+  .scope-menu[hidden]{display:none}
+  .scope-menu button{border:0;background:none;text-align:left;font:inherit;font-size:var(--f2);color:var(--text);
+    padding:0 10px;min-height:32px;border-radius:var(--r中);cursor:pointer;white-space:nowrap}
+  .scope-menu button:hover,.scope-menu button:focus-visible{background:var(--面2)}
+  .scope-menu button[aria-checked="true"]{font-weight:650}
+  @media(pointer:coarse){.scope-menu button{min-height:44px}}
+  .home-tabs{display:flex;gap:2px;margin:0 0 6px;overflow-x:auto;flex-wrap:nowrap}
+  .home-tabs .tab{border-radius:var(--r中);border:0;background:transparent;min-height:34px;padding:0 10px;flex:0 0 auto}
+  .home-tabs .tab.active{background:var(--面2);color:var(--astra-ink);font-weight:700}
+
+  @media(pointer:coarse){ .home-tabs .tab,#listView .tab{min-height:44px} }
+  #listView .search2{border-color:var(--边);background:var(--bg);border-radius:var(--r中)}
+  #listView .advchips{border-radius:0;box-shadow:none}
+  #listView .list-note{padding:0 0 8px;margin:0;color:var(--astra-muted)}
+  #listView .task-table th{color:var(--次);font-size:12px;font-weight:650;border-bottom:1px solid var(--astra-line)}
+  #listView .task-table td{border-bottom:1px solid var(--线)}
+  #listView .task-table tr:hover td{background:var(--面)}
+  #listView .task-title{font-weight:630}
+  #listView .table-foot{border-top:0;background:var(--bg);color:var(--astra-muted);justify-content:flex-end;padding:8px 2px 0}
+
+  #detailView{max-width:1240px;margin:0 auto;padding-top:24px}
+  #detailView .crumb{max-width:850px;margin:0 0 20px;color:var(--astra-muted);font-size:var(--f3)}
+  #detailView .dgrid{display:grid;grid-template-columns:minmax(0,1fr) var(--dside-w,300px);gap:64px;align-items:start}
+  #detailView .dmain{min-width:0;max-width:850px}
+  #detailView .dhead{margin-bottom:8px}
+  #detailView .dtitle-row{align-items:flex-start;gap:6px;flex-wrap:wrap}
+  #detailView .dtitle{font-size:30px!important;line-height:1.26;letter-spacing:-.025em;font-weight:760;margin:0 8px 8px 0;min-width:min(520px,100%)}
+  #detailView .dmain>.dsec{border:0;background:var(--bg);padding:8px 0 40px;margin:0}
+  #detailView .doc{font-size:16px;line-height:1.72;min-height:280px}
+  #detailView .dside{border-left:1px solid var(--astra-line);padding-left:28px;min-width:0}
+
+  #detailView .dresize{left:-6px}
+  #detailView .dresize::before{left:5px;background:transparent}
+  #detailView .dresize:hover::before,#detailView .dresize:focus-visible::before{left:4px;width:3px;background:var(--accent)}
+  @media(max-width:900px){#detailView .dresize{display:none}}
+  #detailView .sf{border:0;border-bottom:1px solid var(--astra-line);border-radius:0;background:var(--bg);box-shadow:none;padding:16px 0;margin:0}
+  #detailView .sf:first-of-type{padding-top:0}
+  #detailView .sf-h{margin-bottom:11px}
+  #detailView .sf-h b{font-size:var(--f3)}
+  #detailView .sl,#detailView .sf-note{color:var(--astra-muted);font-size:12px}
+  #detailView .detail-save-fail{max-width:850px;margin-bottom:16px}
+
+  #cardPage{max-width:none;margin:0;padding-top:22px}
+  #cardPage #noteBox{
+    width:100%;max-width:none;min-height:calc(100vh - 118px);height:auto;max-height:none;
+    margin:0;border:0;border-radius:0;box-shadow:none;background:var(--bg);overflow:visible;
+    display:grid;grid-template-columns:264px minmax(0,1fr);grid-template-rows:auto 1fr;column-gap:48px;
+  }
+  #cardPage #noteBox>.mh{grid-column:2;grid-row:1;border-bottom:1px solid var(--astra-line);padding:0 0 12px;min-height:46px}
+  #cardPage #noteBox>.mh #noteTitle{font-size:var(--f6);font-weight:740;letter-spacing:-.02em}
+  #cardPage #noteBox>.notetabs{
+    grid-column:1;grid-row:1/3;align-self:stretch;margin:0;padding:4px 20px 30px 0;
+    border-right:1px solid var(--astra-line);display:flex;flex-direction:column;gap:4px;max-height:none!important;overflow:auto;
+  }
+  #cardPage #noteBox>.ntresize{display:none}
+  #cardPage #noteBox>.mb{grid-column:2;grid-row:2;padding:22px 0 60px;min-width:0}
+  #cardPage #noteBox .ntab,#cardPage #noteBox .ntmore,#cardPage #noteBox .ntnew{
+    width:100%;min-height:44px;box-sizing:border-box;border-radius:var(--r中);margin:0;text-align:left;flex:0 0 auto;
+  }
+  #cardPage #noteBox .ntab{display:flex;align-items:center;justify-content:space-between;padding:0 9px;border:0;background:transparent}
+  #cardPage #noteBox .ntab:hover{background:var(--astra-hover)}
+  #cardPage #noteBox .ntab.on{background:var(--面2)}
+  #cardPage #noteBox .notetitle-row{max-width:850px}
+  #cardPage #noteBox .notetitle{font-size:30px;line-height:1.25;font-weight:740;border:0;border-bottom:1px solid transparent;border-radius:0;padding:6px 0 10px}
+  #cardPage #noteBox .notetitle:focus{border-bottom-color:var(--边);box-shadow:none}
+  #cardPage #noteBox .addrow,#cardPage #noteBox .aititle-result,#cardPage #noteBox .aititle-wait,#cardPage #noteBox .note-body-sec,#cardPage #noteBox .note-link-sec,#cardPage #noteBox .note-large-actions,#cardPage #noteBox .notefoot{max-width:850px}
+  #cardPage #noteBox .note-body-sec{border:0;background:var(--bg);padding:8px 0 30px;margin:0}
+  #cardPage #noteBox .doc{font-size:16px;line-height:1.72;min-height:300px}
+  #cardPage #noteBox .note-link-sec{margin-top:24px}
+  #cardPage #noteBox .foot{border-top:1px solid var(--astra-line);padding-top:12px}
+
+  #cardPage #noteBox .ntab.on{color:var(--text)}
+  #cardPage #noteBox .ntab{max-width:none}
+  #cardPage #noteBox>.mh{max-width:850px}
+  #cardPage #noteBox .aititle-btn{align-self:center;height:38px;display:inline-grid;place-items:center;padding:0}
+
+  #listView .task-table td[data-col="关联标签"] .tags{max-width:520px}
+  #listView .task-table td[data-col="关联标签"] .tag{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block}
+
+  #listView .tabs-search{column-gap:16px;row-gap:6px}
+  #listView .tabs-search .archsw{margin-left:auto;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;color:var(--astra-muted);font-size:var(--f1)}
+
+  #listView [hidden]{display:none!important}
+  #listView .表名.page-head{justify-content:flex-start;margin:0}
+  #listView .表名 .数说{margin-left:auto}
+
+  #listView table.勾选表 tbody tr.sel:not(.hl)>td:first-child{box-shadow:none!important}
+  #listView .表条 .search2{flex:0 1 300px;min-width:180px;margin:0;padding:6px 10px;background:var(--bg)}
+  #listView .表条 .search2.快搜{padding-top:0;padding-bottom:0}
+  #listView .表条 .search2.快搜 input{padding:7px 0}
+  #listView .表条 .bar-gap{flex:1 1 0}
+  #listView .筛条{padding:0 2px 8px}
+  #listView .筛条 .conj{color:var(--次);font-weight:650}
+  #listView .视图单{min-width:280px;max-width:min(360px,calc(100vw - 32px));max-height:min(460px,70vh)}
+  #listView .视图单 .view-name-search{display:flex;align-items:center;gap:6px;margin:2px 2px 4px;padding:5px 8px;
+    border:1px solid var(--线);border-radius:var(--r中);color:var(--次)}
+  #listView .视图单 .view-name-search input{border:0;outline:0;background:none;color:var(--字);font:inherit;font-size:var(--f2);width:100%;min-width:0}
+  #listView .视图单 .view-name-search:focus-within{border-color:var(--蓝);outline:2px solid var(--蓝);outline-offset:1px}
+  #listView .视图单 .viewitem{display:flex;align-items:center;gap:2px}
+  #listView .视图单 .viewitem .项{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+  #listView .视图单 .vi-op{flex:none;min-width:28px;min-height:28px;border:0;border-radius:var(--r中);background:none;color:var(--次);cursor:pointer}
+  #listView .视图单 .vi-op:hover{background:var(--面);color:var(--字)}
+  #listView .视图单 .view-rename input{flex:1;min-width:0;padding:5px 8px;border:1px solid var(--线);border-radius:var(--r中);background:var(--bg);color:var(--字);font:inherit}
+  #listView .视图单 .view-empty{padding:4px 8px;color:var(--次);font-size:var(--f1)}
+  #listView .view-form{display:flex;flex-direction:column;gap:6px;padding:6px 4px 2px}
+  #listView .view-form input[type=text]{padding:6px 8px;border:1px solid var(--线);border-radius:var(--r中);background:var(--bg);color:var(--字);font:inherit}
+  #listView .view-save-search{display:flex;align-items:center;gap:6px;font-size:var(--f1);color:var(--次)}
+  #listView .view-form-btns{display:flex;justify-content:flex-end;gap:6px}
+  #listView .view-form-hint{color:var(--次);font-size:var(--f0);line-height:var(--lh正)}
+  #advMask .adv-base{display:flex;gap:12px;flex-wrap:wrap;margin:0 0 10px}
+  #advMask .adv-base .fld{display:inline-flex;align-items:center;gap:6px;font-size:var(--f2)}
+  @media(pointer:coarse){
+    #listView .视图单 .vi-op{min-width:44px;min-height:44px}
+    #listView .视图单 .view-name-search,#listView .view-save-search{min-height:44px;box-sizing:border-box}
+  }
+  #listView .list-note:has(#listNote:empty){display:none}
+  #listView .task-table td,#listView .task-title{font-size:var(--f3)}
+  #cardPage #noteBox>:not(.notetabs){justify-self:center;width:min(850px,100%)}
+  #detailView .dtitle-row .dtitle{flex:1 1 0;min-width:0}
+  #detailView .dtitle-row::after{content:'';flex-basis:100%;order:1}
+  #detailView .dtitle-row>:not(.dtitle):not(.aititle-btn){order:2}
+  #detailView .dtitle-row .aititle-btn{height:38px;align-self:center;display:inline-grid;place-items:center;padding:0}
+
+  @media(max-width:760px){
+    .wrap{padding:0 14px 40px}
+    .astra-home{padding:34px 0 56px}
+    .astra-home h1,#detailView .dtitle{font-size:var(--f6)!important}
+    .astra-home-open{grid-template-columns:minmax(0,1fr);gap:8px;min-height:102px;padding:15px 2px}
+    .astra-home-meta{justify-content:flex-start}
+    .astra-home-editor{padding-left:0;padding-right:0}
+    .astra-home-editor .home-editor-top{gap:4px}
+    .astra-home-editor .home-editor-foot{flex-wrap:wrap}
+    .astra-home-editor .home-editor-state{width:100%;margin:0 0 2px}
+    #listView{padding-top:24px}
+    #listView .tabs-search{align-items:stretch}
+    #listView .tabs{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+    #listView .tabrow{flex:0 0 auto}
+    #listView .表条 .search2{flex:1 1 100%}
+    #listView .表条 .bar-gap{display:none}
+    #listView .表壳 > .表身{padding:10px 8px 12px}
+    #listView .task-table th[data-col="关联标签"],#listView .task-table td[data-col="关联标签"],
+    #listView .task-table th[data-col="创建"],#listView .task-table td[data-col="创建"],
+    #listView .task-table th[data-col="最后修改"],#listView .task-table td[data-col="最后修改"],
+    #listView .task-table th[data-col="进度"],#listView .task-table td[data-col="进度"]{display:none!important}
+
+    #listView .table-box,#listView .tscroll{overflow-x:visible}
+    #listView .task-table{min-width:0;width:100%;table-layout:fixed}
+    #listView .task-table .cstar{width:74px}
+    #listView .task-table .cdue{width:94px}
+    #listView .task-table th[data-col="状态"],#listView .task-table td[data-col="状态"]{width:94px}
+    #detailView{padding-top:18px}
+    #detailView .dgrid{grid-template-columns:1fr;gap:28px}
+    #detailView .dmain{max-width:none}
+    #detailView .dside{border-left:0;border-top:1px solid var(--astra-line);padding:10px 0 0}
+    #detailView .doc{min-height:220px}
+    #cardPage{padding-top:12px}
+    #cardPage #noteBox{display:block;min-height:calc(100vh - 90px)}
+    #cardPage #noteBox>.mh{display:flex;padding:0 0 8px}
+    #cardPage #noteBox>.notetabs{display:flex;flex-direction:row;gap:6px;overflow-x:auto;border:0;border-bottom:1px solid var(--astra-line);padding:8px 0 10px;margin:0;max-height:none!important}
+    #cardPage #noteBox .ntab,#cardPage #noteBox .ntmore,#cardPage #noteBox .ntnew{width:auto;min-width:max-content;max-width:220px;padding:0 10px}
+    #cardPage #noteBox>.mb{padding:16px 0 46px}
+    #cardPage #noteBox .notetitle{font-size:var(--f6)}
+    #cardPage #noteBox .doc{min-height:240px}
+
+    .astra-home{padding:18px 0 40px}
+    .astra-home-head{margin-bottom:10px}
+    .astra-home h1{font-size:22px!important}
+    .astra-eyebrow{font-size:12px}
+    .astra-home-open{min-height:0;gap:4px;padding:10px 2px}
+    .astra-home-title{font-size:14.5px}
+    .astra-home-excerpt{font-size:12.5px;margin-top:2px}
+    .astra-home-meta{font-size:11.5px}
+
+    #cardPage{padding-top:6px}
+    #cardPage #noteBox>.mh{min-height:0;padding:0 0 4px;border-bottom:0}
+    #cardPage #noteBox>.mh #noteTitle{font-size:var(--f2);font-weight:650;letter-spacing:0;color:var(--次)}
+    #cardPage #noteBox>.notetabs{flex-wrap:wrap;overflow-x:hidden;overflow-y:auto;max-height:var(--ntabs-h,none)!important;
+      padding:6px 8px;gap:5px;border-bottom:0;background:var(--面);border-radius:8px 8px 0 0}
+    #cardPage #noteBox .ntab,#cardPage #noteBox .ntmore,#cardPage #noteBox .ntnew{min-width:0;min-height:26px;height:26px;font-size:12px}
+    #cardPage #noteBox .ntab{max-width:120px;padding:0 8px;border-radius:var(--r中);background:var(--bg)}
+    #cardPage #noteBox .ntab.on{background:var(--蓝浅,var(--面2));color:var(--text);font-weight:650;box-shadow:inset 0 0 0 1px var(--蓝)}
+    #cardPage #noteBox .ntab .nt{min-width:0}
+    #cardPage #noteBox .ntmore{padding:0 4px}
+    #cardPage #noteBox .ntnew{padding:0 9px;border-radius:var(--r中)}
+    #cardPage #noteBox>.ntresize{display:block;height:9px;background:var(--面);border-bottom:1px solid var(--astra-line);
+      border-radius:0 0 8px 8px;position:relative}
+    #cardPage #noteBox>.ntresize::after{content:'';position:absolute;left:50%;top:3px;width:28px;height:3px;margin-left:-14px;
+      border-radius:2px;background:var(--边)}
+    #cardPage #noteBox>.ntresize:hover::after{background:var(--蓝);width:44px;margin-left:-22px}
+    #cardPage #noteBox>.mb{padding:8px 0 40px}
+    #cardPage #noteBox .notetitle{font-size:15px;font-weight:650;line-height:1.4;padding:4px 0 6px;min-height:0}
+    #cardPage #noteBox .aititle-btn{height:30px;min-height:30px;flex-basis:30px;min-width:30px}
+    #cardPage #noteBox .doc{font-size:13px;line-height:1.7;min-height:200px}
+  }
+  @media(max-width:760px) and (pointer:coarse){
+    #cardPage #noteBox .ntab,#cardPage #noteBox .ntmore,#cardPage #noteBox .ntnew{min-height:44px;height:auto}
+    #cardPage #noteBox .aititle-btn{min-height:44px;min-width:44px}
+    #cardPage #noteBox>.ntresize{height:14px}
+  }
+
+  @media(max-width:560px){
+    #listView .tabs{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent);padding-right:36px}
+    #listView .task-table,#listView .task-table thead,#listView .task-table tbody{display:block;width:100%}
+    #listView .task-table tr{display:grid;grid-template-columns:38px auto minmax(0,1fr) auto auto;column-gap:8px;align-items:center;
+      border-bottom:1px solid var(--astra-line);padding:6px 0}
+    #listView .task-table th,#listView .task-table td{display:block;border:0!important;padding:0;width:auto!important;min-width:0;max-width:none}
+    #listView .task-table .cchk{grid-column:1;grid-row:1 / span 2;align-self:center}
+
+    #listView .task-table .cid{grid-column:2;grid-row:1}
+    #listView .task-table .cmatter{grid-column:3;grid-row:1}
+    #listView .task-table th[data-col="状态"],#listView .task-table td[data-col="状态"]{grid-column:4 / span 2;grid-row:1;width:auto!important}
+
+    #listView .task-table td.改{display:flex;align-items:center}
+    #listView .task-table td.改::before{display:none}
+    #listView .task-table .cstar{grid-column:2;grid-row:2}
+    #listView .task-table .cdue{grid-column:3;grid-row:2;display:flex;align-items:center;gap:8px}
+    #listView .task-table td.csub{display:block!important;grid-column:4;grid-row:2;text-align:right}
+    #listView .task-table td.caddsub{display:block!important;grid-column:5;grid-row:2;text-align:right}
+    #listView .task-table td.cfile[data-col="附件"]{display:block!important;grid-column:3 / span 3;grid-row:3}
+    #listView .task-table td.cfile[data-col="附件"]:empty{display:none!important}
+    #listView .task-table td.cprog[data-col="进度"]{display:block!important;grid-column:3 / span 3;grid-row:4}
+    #listView .task-table td.cprog[data-col="进度"]:empty{display:none!important}
+    #listView .task-table thead th.cprog,#listView .task-table thead th.csub,#listView .task-table thead th.caddsub,#listView .task-table thead th.cfile{display:none!important}
+    #listView .task-table .cdue .late{display:inline}
+    #listView .task-table thead th.cstar,#listView .task-table thead th[data-col="计划完成"]{display:none!important}
+    #listView .task-table thead .cmatter{grid-row:1}
+    #listView .task-table thead tr{background:var(--面)}
+    #listView .表壳 .表框 .task-table thead th{background:none}
+    #listView .task-table .task-title{display:block;white-space:normal;overflow-wrap:anywhere}
+  }
+
+  #noteBox .notetitle-row.找中{position:sticky;top:0;z-index:4;background:var(--bg)}
+  #noteBox .notetitle-row.找中>:is(input.notetitle,.aititle-btn){display:none}
+  #noteBox .notefind{flex:1 1 auto;min-width:0;display:flex;align-items:center;gap:2px;flex-wrap:nowrap}
+  #noteBox .notefind[hidden],#noteFindBtn[hidden]{display:none}
+  #noteBox .notefind-范围{flex:none;font:inherit;font-size:var(--f1);color:var(--text);background:var(--bg);
+    border:1px solid var(--border-strong);border-radius:var(--r小);padding:0 2px;cursor:pointer;height:100%}
+
+  .notefind-hits{position:absolute;left:0;right:0;top:100%;z-index:5;margin-top:2px;padding:4px;max-height:min(60vh,320px);overflow:auto;
+    background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r中);box-shadow:0 6px 18px rgba(0,0,0,.18)}
+  .notefind-hits[hidden]{display:none}
+  .notefind-hit{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;padding:5px 8px;
+    border-radius:var(--r小);cursor:pointer;font:inherit;color:var(--text)}
+  .notefind-hit:hover,.notefind-hit.cur{border-color:var(--accent);background:var(--accent-soft)}
+  .notefind-hit b,.notefind-hit span{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .notefind-hit b{font-size:var(--f2);font-weight:650}
+  .notefind-hit span{font-size:var(--f1);color:var(--muted);margin-top:1px}
+  .notefind-hit mark{background:var(--warn-bg);color:inherit;text-decoration:underline 2px}
+  .notefind-hit em{font-style:normal;color:var(--faint)}
+  .notefind-无{padding:6px 8px;color:var(--muted);font-size:var(--f1)}
+
+  .note-head-acts{display:inline-flex;align-items:center;gap:2px;flex:0 0 auto}
+  #cardPage #noteBox>.mh{display:none!important}
+  #noteBox .notetitle-row .note-head-acts{align-self:center}
+
+  #noteBox .notetitle-row .ic{cursor:pointer;color:var(--muted);font-size:var(--f4);background:none;border:none;padding:2px 4px;
+    display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  #noteBox .notetitle-row .ic:hover{color:var(--text)}
+
+  #noteBox .note-head-acts .线标{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+  #noteNewBtn,#noteFindBtn,#noteLookBtn{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  html.embed #noteLookBtn{display:none}
+
+  #noteMdBtn{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  #noteMdBtn[aria-pressed="true"]{color:var(--text);box-shadow:inset 0 -2px 0 currentColor}
+  #noteBox.md两栏 .note-body-sec [data-doc]{display:none}
+  #noteBox.md两栏 .notefoot :is([data-add],[data-undo],[data-redo],[data-history],[data-ai速记]){opacity:.35;cursor:not-allowed}
+
+  #noteBox.md两栏 .note-body-sec{display:flex;flex-direction:column}
+  .note-md{container-type:inline-size;flex:1 0 auto;display:flex;flex-direction:column}
+  .note-md[hidden]{display:none}
+  .md-cols{flex:1 0 auto;display:flex;flex-direction:column}
+  .md-pane{display:flex;flex-direction:column;min-width:0}
+  .md-pane:first-child{flex:1 0 auto}
+  .md-pane+.md-pane{border-top:1px solid var(--border);margin-top:8px;padding-top:8px}
+  @container (min-width:640px){
+    .md-cols{flex-direction:row}
+    .md-cols>.md-pane{flex:1 1 0}
+    .md-cols>.md-pane+.md-pane{border-top:0;margin:0 0 0 14px;padding:0 0 0 14px;border-left:1px solid var(--border)}
+  }
+  .md-h{display:flex;align-items:baseline;gap:8px;margin:0 0 4px;font-size:var(--f0);color:var(--muted)}
+  .md-h b{font-weight:650}
+  .md-msg{margin-left:auto;text-align:right;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  #noteMd .md-h{align-items:center;min-height:24px}
+  .md-复制{flex:none;box-sizing:border-box;height:24px;min-height:0;padding:0 8px;line-height:22px;font-size:var(--f0)}
+  @media(pointer:coarse){#noteMd .md-h,.md-复制{height:auto;min-height:44px}}
+  .md-in{box-sizing:border-box;width:100%;flex:1 0 auto;min-height:8em;resize:none;field-sizing:content;tab-size:2;
+    padding:4px 0;border:0;border-radius:0;background:transparent;color:var(--text);caret-color:var(--accent);outline:none;
+    font-family:inherit;font-size:var(--f3);line-height:var(--lh正)}
+  .md-view{min-width:0;padding:4px 0;font-size:var(--f3);line-height:var(--lh正);overflow-wrap:anywhere;color:var(--text)}
+  .md-view :is(p,.md-tx,blockquote,td,th,summary){white-space:pre-wrap}
+  .md-view p{margin:0 0 .45em}
+  .md-view :is(h1,h2,h3){margin:.5em 0 .3em;line-height:var(--lh密);font-weight:700}
+  .md-view h1{font-size:var(--f5)} .md-view h2{font-size:var(--f4)} .md-view h3{font-size:var(--f3)}
+  .md-view>:first-child{margin-top:0}
+  .md-li{display:flex;align-items:flex-start;gap:7px;margin:0 0 .3em}
+  .md-mk{flex:0 0 auto;min-width:1.2em;text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .md-mk input{margin:3px 0 0;width:14px;height:14px}
+  .md-tx{flex:1;min-width:0}
+  .md-li.done .md-tx{text-decoration:line-through;color:var(--faint)}
+  .md-sub{padding-left:1.4em}
+  .md-view blockquote{margin:0 0 .45em;border-left:3px solid var(--border-strong);padding:3px 10px;color:var(--muted)}
+  .md-view pre{margin:0 0 .45em;padding:6px 10px 8px;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r中);
+    font-family:var(--等宽);font-size:var(--f2);line-height:var(--lh正);overflow-x:auto;white-space:pre}
+  .md-lang{display:block;font-size:var(--f0);color:var(--faint);font-family:inherit}
+  .md-view code{font-family:var(--等宽);font-size:.92em;background:var(--surface-2);border-radius:var(--r小);padding:0 3px}
+  .md-view pre code{background:none;padding:0;font-size:inherit}
+  .md-view .tk-kw{color:var(--蓝)} .md-view .tk-str{color:var(--琥)} .md-view .tk-com{color:var(--弱)}
+  .md-view .tk-num{color:var(--青)} .md-view .tk-tag{color:var(--红)} .md-view .tk-op{color:var(--次)}
+  .md-view table{border-collapse:collapse;margin:0 0 .45em;font-size:var(--f2)}
+  .md-view :is(th,td){border:1px solid var(--border);padding:3px 7px;text-align:left;vertical-align:top}
+  .md-view th{background:var(--surface-2);font-weight:650}
+  .md-view hr{border:0;border-top:1px solid var(--border-strong);margin:.6em 0}
+  .md-img{margin:0 0 .45em}
+  .md-img img{display:block;max-width:100%;height:auto;border-radius:var(--r小)}
+  .md-img.al-center img{margin:0 auto} .md-img.al-right img{margin-left:auto}
+  .md-file{display:inline-flex;align-items:center;gap:6px;margin:0 0 .45em;padding:3px 8px;border:1px solid var(--border);
+    border-radius:var(--r中);color:var(--text);text-decoration:none;font-size:var(--f2)}
+  .md-file.missing{border-style:dashed;color:var(--muted)}
+  .md-date{display:inline-block;margin:0 0 .45em;padding:1px 6px;border:1px solid var(--border);border-radius:var(--r小);font-size:var(--f2)}
+  .md-view details{margin:0 0 .45em}
+  .md-view summary{cursor:pointer;font-weight:650}
+  .md-view a{color:var(--蓝);text-decoration:underline}
+
+  html{--板-bg:var(--bg);--板-面:var(--面);--板-面2:var(--面2);--板-surface:var(--surface);--板-surface-2:var(--surface-2);
+    --板-字:var(--字);--板-text:var(--text);--板-次:var(--次);--板-muted:var(--muted);--板-弱:var(--弱);--板-faint:var(--faint);
+    --板-蓝:var(--蓝);--板-accent:var(--accent);--板-蓝浅:var(--蓝浅);--板-accent-soft:var(--accent-soft);--板-蓝深:var(--蓝深);
+    --板-边:var(--边);--板-border-strong:var(--border-strong);--板-线:var(--线);--板-border:var(--border)}
+  .便笺外观{position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;padding:12px;background:var(--窗遮);
+    --bg:var(--板-bg);--面:var(--板-面);--面2:var(--板-面2);--surface:var(--板-surface);--surface-2:var(--板-surface-2);
+    --字:var(--板-字);--text:var(--板-text);--次:var(--板-次);--muted:var(--板-muted);--弱:var(--板-弱);--faint:var(--板-faint);
+    --蓝:var(--板-蓝);--accent:var(--板-accent);--蓝浅:var(--板-蓝浅);--accent-soft:var(--板-accent-soft);--蓝深:var(--板-蓝深);
+    --边:var(--板-边);--border-strong:var(--板-border-strong);--线:var(--板-线);--border:var(--板-border);color:var(--text)}
+  .便笺外观[hidden]{display:none}
+
+  .外观卡{width:min(440px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden;box-sizing:border-box;
+    background:var(--bg);color:var(--text);border:1px solid var(--border-strong);border-radius:var(--r大);box-shadow:var(--影弹);font-size:var(--f2)}
+  .外观滚{flex:1 1 auto;min-height:0;overflow:auto;padding:12px 14px 6px}
+  .外观卡 h3{margin:0 0 10px;font-size:var(--f3);font-weight:650}
+  .外观段{margin:12px 0 0;padding-top:8px;border-top:1px solid var(--border)}
+  .外观卡 h3 + .外观段{margin-top:0;padding-top:0;border-top:0}
+  .外观段名{margin:0 0 6px;font-size:12px;font-weight:700;line-height:1.4;letter-spacing:.04em;color:var(--muted)}
+  .外观行{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+  .外观名{flex:0 0 6.5em;color:var(--muted)}
+  .外观行 select,.外观行 input[type=text]{flex:1 1 140px;min-width:0;height:28px;box-sizing:border-box;padding:0 6px;
+    border:1px solid var(--border-strong);border-radius:var(--r小);background:var(--bg);color:var(--text);font:inherit}
+  .外观行 input[type=range]{flex:1 1 110px;min-width:80px;margin:0;accent-color:var(--accent)}
+  .外观值{min-width:3.4em;text-align:right;font-variant-numeric:tabular-nums}
+  .外观注{color:var(--muted);font-size:var(--f1)}
+  .外观注.警{color:var(--text);font-weight:700}
+  .外观小钮{height:28px;padding:0 8px;border:1px solid var(--border-strong);border-radius:var(--r小);background:var(--bg);color:var(--text);
+    font:inherit;cursor:pointer;white-space:nowrap}
+  .外观小钮:hover:not(:disabled){border-color:var(--accent)}
+  .外观小钮:disabled{opacity:.45;cursor:default}
+
+  .外观色格{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin:0 0 8px}
+  #noteBox label.外观色{display:flex;flex-direction:column;align-items:stretch;gap:4px;margin:0;font-size:inherit;color:var(--muted)}
+  .外观色 input[type=color]{flex:none;display:block;width:100%;height:30px;padding:0;box-sizing:border-box;border:1px solid var(--border-strong);border-radius:var(--r小);background:var(--bg);cursor:pointer}
+  .外观色 input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+  .外观色 input[type=color]::-webkit-color-swatch{border:0;border-radius:calc(var(--r小) - 1px)}
+  .外观色 input[type=color]::-moz-color-swatch{border:0;border-radius:calc(var(--r小) - 1px)}
+  .外观色名{display:block;font-size:12px;line-height:1.25;text-align:center;color:var(--muted);overflow-wrap:anywhere}
+  .外观钮排{flex:none;display:flex;align-items:center;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--border)}
+  .外观钮排 .grow{flex:1}
+  .外观钮排 :is(.主钮,.次钮){padding:3px 12px}
+  @media(pointer:coarse){
+    .外观小钮,.外观钮排 :is(.主钮,.次钮),.外观行 select,.外观行 input[type=text]{min-height:44px}
+    .外观小钮{min-width:44px}
+    .外观色格{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .外观色 input[type=color]{height:44px}
+    .外观行 input[type=range]{height:44px}
+  }
+
+  html #noteMask #noteBox.外观边{border:var(--便笺边宽,1px) solid var(--border-strong);background-clip:padding-box}
+  html #noteMask #noteBox.外观底透{--便笺底色:color-mix(in srgb,var(--bg) var(--便笺透),transparent)}
+  html.solo.窗透明,html.solo.窗透明 body{background:transparent}
+  html #noteMask #noteBox.外观圆角{border-radius:var(--便笺圆角)}
+
+  html #noteMask #noteBox.外观羽化{position:relative}
+  html #noteMask #noteBox.外观羽化::after{content:'';position:absolute;inset:0;z-index:5;pointer-events:none;border-radius:inherit;
+    box-shadow:inset 0 0 calc(var(--便笺羽化) / 2) calc(var(--便笺羽化) / 2) var(--border-strong)}
+
+  html #noteMask #noteBox.有底图{background-image:linear-gradient(var(--便笺图罩),var(--便笺图罩)),var(--便笺底图);
+    background-size:var(--便笺图尺寸,cover);background-position:var(--便笺图位,center);background-repeat:var(--便笺图铺,repeat)}
+  #noteMask #noteBox.外观栏 .mh{background:var(--便笺标题栏)}
+
+  #noteMask #noteBox.外观栏 .mh{--字:var(--便笺标题栏字);--text:var(--便笺标题栏字);--次:var(--便笺标题栏次);--muted:var(--便笺标题栏次);color:var(--便笺标题栏字)}
+
+  html:has(#noteMask:not(.hidden)) .提示栈{bottom:calc(var(--便笺底栏高,0px) + var(--s2));top:auto}
+  #noteBox.外观签 .ntab.on{background:var(--便笺当前签);border-color:var(--便笺当前签);color:var(--便笺当前签字)}
+  #noteBox.外观签字 .ntab.on{color:var(--便笺当前签字)}
+
+  html #noteMask #noteBox.外观底透{background-color:transparent}
+  html #noteMask #noteBox.外观底透.有底图{background-image:none;position:relative;isolation:isolate}
+  html #noteMask #noteBox.外观底透.有底图::before{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;
+    background:linear-gradient(var(--便笺图罩),var(--便笺图罩)),var(--便笺底图) var(--bg);opacity:var(--便笺透);
+    background-size:var(--便笺图尺寸,cover);background-position:var(--便笺图位,center);background-repeat:var(--便笺图铺,repeat)}
+  #noteMask #noteBox.外观底透.有底图>.mb{background:none}
+  #noteMask #noteBox.外观底透 .mh{background:color-mix(in srgb,var(--便笺标题栏,var(--surface)) var(--便笺透),transparent)}
+  #noteMask #noteBox.外观底透 :is(.notetabs,.ntresize){background:color-mix(in srgb,var(--面) var(--便笺透),transparent)}
+  #noteMask #noteBox.外观底透>.mb{background:linear-gradient(var(--便笺底色),var(--便笺底色)) top/100% calc(100% - var(--便笺底栏高,0px)) no-repeat}
+  #noteMask #noteBox.外观底透 .notefoot{background:var(--便笺底色);box-shadow:-40px 0 0 var(--便笺底色),40px 0 0 var(--便笺底色)}
+  #noteMask #noteBox.外观底透 :is(input.notetitle,.notefoot .次钮:not(:hover)){background:transparent}
+
+  html #noteMask #noteBox.有底图 .mh{background:color-mix(in srgb,var(--便笺标题栏,var(--surface)) 45%,transparent)}
+  html #noteMask #noteBox.有底图 :is(.notetabs,.ntresize){background:color-mix(in srgb,var(--面) 45%,transparent)}
+  html #noteMask #noteBox.有底图 .notefoot{background:color-mix(in srgb,var(--bg) 45%,transparent);box-shadow:none}
+  html #noteMask #noteBox.外观底透.有底图 .mh{background:color-mix(in srgb,var(--便笺标题栏,var(--surface)) calc(var(--便笺透) * 0.45),transparent)}
+  html #noteMask #noteBox.外观底透.有底图 :is(.notetabs,.ntresize){background:color-mix(in srgb,var(--面) calc(var(--便笺透) * 0.45),transparent)}
+  html #noteMask #noteBox.外观底透.有底图 .notefoot{background:color-mix(in srgb,var(--bg) calc(var(--便笺透) * 0.45),transparent)}
+
+  html #noteMask #noteBox.有底图 :is(input.notetitle,.notetitle-row.找中){background:color-mix(in srgb,var(--bg) 45%,transparent)}
+  html #noteMask #noteBox.外观底透.有底图 :is(input.notetitle,.notetitle-row.找中){background:color-mix(in srgb,var(--bg) calc(var(--便笺透) * 0.45),transparent)}
+  html #noteMask #noteBox.有底图 .notetitle-row.找中 :is(.notefind-范围,.notefind-框){background:transparent}
+  #noteMask #noteBox.外观底透 .ntab:not(.on){background:transparent}
+  #noteMask #noteBox.外观底透 .ntab:not(.on,.pin,:hover){border-color:var(--线)}
+  #noteMask #noteBox.外观底透 .ntab.on{background:color-mix(in srgb,var(--便笺当前签,var(--蓝)) var(--便笺透),transparent)}
+  #noteMask #noteBox.外观底透 .ntab.on:not(.pin){border-color:transparent}
+
+  #noteMask #noteBox.外观底透{--便笺选中底:color-mix(in srgb,var(--accent) 10%,transparent)}
+  #noteMask #noteBox.外观底透 .block:is(.selblk,.dropin){background:var(--便笺选中底)}
+  #noteMask #noteBox.外观底透 .imbar .ib{background:color-mix(in srgb,var(--bg) var(--便笺透),transparent)}
+  #noteMask #noteBox.外观底透 .imbar .ib.on{background:color-mix(in srgb,var(--accent-soft) var(--便笺透),transparent)}
+  @media(pointer:fine){
+    #noteMask #noteBox.外观底透 .block.selblk{box-shadow:-6px 0 0 var(--便笺选中底),6px 0 0 var(--便笺选中底)}
+  }
+  @media(max-width:700px){
+    #noteMask #noteBox.外观底透 :is(.bimgwrap .imbar,.bimgwrap .imw){background:color-mix(in srgb,var(--bg) calc(var(--便笺透) * 0.82),transparent)}
+  }
+
+  html #noteMask #noteBox.外观圆角.有底图:not(.外观底透) :is(input.notetitle,.notefoot){border-radius:calc(var(--便笺圆角) / 2)}
+  #noteBox.外观字 .mb{font-family:var(--便笺字体)}
+
+  #noteBox .notefind-框{display:flex;align-items:center;flex:1 1 auto;width:auto;min-width:0;min-height:0;height:100%;margin:0;padding:0 4px 0 8px;font-size:inherit}
+  #noteBox .notefind-框 .线标{width:1em;height:1em;display:block;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+  #noteFindIn{font:inherit;font-size:var(--f2);padding:3px 0}
+  #noteFindCnt{flex:none;min-width:3.5em;white-space:nowrap;text-align:center;font-size:var(--f1);color:var(--muted);font-variant-numeric:tabular-nums}
+  #noteBox .notefind>button{flex:none;border:0;background:none;color:var(--muted);cursor:pointer;padding:3px 7px;border-radius:var(--r小);font:inherit}
+  #noteBox .notefind>button:hover{background:var(--accent-soft);color:var(--accent)}
+  ::highlight(note-find){background-color:var(--warn-bg)}
+  ::highlight(note-find-cur){background-color:var(--warn);color:var(--反字);text-decoration:underline 2px}
+  @media(pointer:coarse){#noteBox .notefind>button,#noteBox .notefind-框,#noteBox .notefind-范围{min-height:44px;min-width:44px}
+    .notefind-hit{min-height:44px}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+
+<div id="homeView">
+  <section class="astra-home" aria-label="待办首页">
+    <div class="astra-home-head">
+      <div>
+        <p class="astra-eyebrow" id="homeDate">—</p>
+        <h1>待办</h1>
+      </div>
+      <div class="astra-head-acts">
+        <span class="astra-home-count" id="homeCount"></span>
+        <button class="次钮" id="homeMove" type="button" onclick="window.open('运动.html','运动提醒','width=420,height=760')"
+          title="久坐运动提醒:开关、工作时段、今天做了几轮,也能「现在做一轮」;到点提醒要有桌面端来弹,只开网页时不弹">运动提醒</button>
+        <button class="次钮" id="homeNote" type="button" onclick="打开便笺页()"
+          title="随手记一条:只写正文,事项自动取正文第一行;以后点「转成待办」再补日期和星级">便笺</button>
+        <button class="主钮" id="homeAdd" type="button" onclick="新建当前()">＋ 添加</button>
+        <button class="次钮 回收站钮" id="homeTrash" type="button" onclick="开回收站(this)" hidden
+          title="删掉的待办先放在这儿,点开能「↩ 还原」放回原处">回收站 <b class="计">0</b></button>
+        <button class="次钮 设置钮" type="button" onclick="开设置(this)" title="设置:关联数据、AI 功能开不开">设置</button>
+        <button class="hd-钮 主题钮" type="button" onclick="切主题()"></button>
+      </div>
+    </div>
+    <nav class="home-tabs tabs" id="homeTabs" aria-label="按状态看">
+      <button class="tab" type="button" data-tab="全部" onclick="切页签('全部')">全部 <span class="count" data-cnt="全部"></span></button>
+      <button class="tab" type="button" data-tab="今日" onclick="点今日(event,this)" aria-haspopup="menu"><span class="tname">今日</span> <span class="count" data-cnt="今日"></span><span class="caret" aria-hidden="true">▾</span></button>
+      <button class="tab" type="button" data-tab="未开始" onclick="切页签('未开始')">未开始 <span class="count" data-cnt="未开始"></span></button>
+      <button class="tab" type="button" data-tab="进行中" onclick="切页签('进行中')">进行中 <span class="count" data-cnt="进行中"></span></button>
+    </nav>
+    <div class="astra-home-list" id="homeRows"></div>
+  </section>
+</div>
+
+<div id="listView" class="hidden">
+<section class="表壳" id="listShell">
+  <div class="表名 page-head">
+    <h1 class="题">全部待办</h1>
+    <span class="today-label" id="todayLabel">—</span>
+    <span class="数说" id="cnt"></span>
+    <button class="次钮 设置钮" type="button" onclick="开设置(this)" title="设置:关联数据、AI 功能开不开">设置</button>
+    <button class="hd-钮 主题钮" type="button" onclick="切主题()"></button>
+  </div>
+  <div class="表身">
+  <div class="tabs-search">
+    <nav class="tabs" id="tabs">
+      <span class="tabrow"><button class="tab" data-tab="全部" onclick="切页签('全部')">全部 <span class="count" id="cnt全部" data-cnt="全部"></span></button></span>
+      <span class="tabrow">
+        <button class="tab" data-tab="今日" onclick="点今日(event,this)" aria-haspopup="menu"><span class="tname">今日</span> <span class="count" id="cnt今日" data-cnt="今日"></span><span class="caret" aria-hidden="true">▾</span></button>
+        <select class="scope" id="fScope" hidden onchange="render()"
+                title="「今日」这一栏往后看几天:选「今日」只看今天到期的;选「近 3 天」把今天起往后 3 天到期的一起看。逾期没做完的一直都在。">
+          <option value="0">范围:今日</option>
+          <option value="2">范围:近 3 天</option>
+          <option value="4">范围:近 5 天</option>
+          <option value="6">范围:近 7 天</option>
+        </select>
+      </span>
+      <span class="tabrow"><button class="tab" data-tab="未开始" onclick="切页签('未开始')">未开始 <span class="count" id="cnt未开始" data-cnt="未开始"></span></button></span>
+      <span class="tabrow"><button class="tab" data-tab="进行中" onclick="切页签('进行中')">进行中 <span class="count" id="cnt进行中" data-cnt="进行中"></span></button></span>
+      <span class="tabrow"><button class="tab" data-tab="已完成" onclick="切页签('已完成')">已完成 <span class="count" id="cnt已完成" data-cnt="已完成"></span></button></span>
+    </nav>
+    <label class="archsw" title="勾上=看归档箱(归档过的待办都在里面,记录不删);不勾=看没归档的,归档的默认隐藏"><input type="checkbox" id="fArch" onchange="onArchChange()">显示归档</label>
+  </div>
+
+  <div class="条换" id="barSwap">
+    <div class="表条" id="listBar">
+      <label class="search2 搜 快搜"><span class="快搜-镜" aria-hidden="true">🔍</span><input type="search" id="q" placeholder="搜索事项、关联数据" oninput="render()"><button type="button" class="快搜-清" title="清空" aria-label="清空" hidden>✗</button></label>
+      <button class="mini" id="advBtn" type="button" onclick="openAdv()"
+        title="按软件、关联类型、字段组合条件筛选;生效的条件排在按钮行下面,每条带 ✗">高级筛选</button>
+      <span class="视图包" id="workViews">
+        <button class="mini 视图钮" id="viewToggle" type="button" onclick="toggleWorkViews()" aria-haspopup="true" aria-expanded="false" aria-controls="workViewPanel"
+          title="工作视图:把一组筛选条件存起来,下次一点就回到这组条件">视图:<b id="viewCurrent">临时筛选</b> ▾</button>
+        <div class="视图单" id="workViewPanel" hidden>
+          <label class="view-name-search 快搜"><span class="快搜-镜" aria-hidden="true">🔍</span><input id="viewSearch" type="search" placeholder="搜索视图名称" oninput="画工作视图列表()"><button type="button" class="快搜-清" title="清空" aria-label="清空" hidden>✗</button></label>
+          <p class="段名">内置</p>
+          <div id="viewBuiltins"></div>
+          <div class="隔"></div>
+          <p class="段名">我存的</p>
+          <div id="viewList"></div>
+          <div class="隔"></div>
+          <button class="项" id="viewUpdateQuick" type="button" hidden onclick="打开更新视图表单()"
+            title="把现在这组条件写回当前这份视图(覆盖它原来的条件)">更新当前视图</button>
+          <button class="项 加" id="viewAddBtn" type="button" onclick="打开新建视图表单()">＋ 把当前筛选存成视图</button>
+          <div class="view-form" id="viewForm" hidden>
+            <input type="text" id="viewName" maxlength="80" placeholder="给当前筛选起个名字">
+            <label class="view-save-search"><input type="checkbox" id="viewSaveSearch"> <span id="viewSaveSearchText">同时保存顶部搜索词</span></label>
+            <div class="view-form-btns">
+              <button class="mini" id="viewFormCancel" type="button" onclick="收起视图表单()">取消</button>
+              <button class="主钮" id="viewSaveBtn" type="button" onclick="提交工作视图()">保存</button>
+            </div>
+            <div class="view-form-hint" id="viewFormHint">保存筛选条件和默认排序;列显示与列宽只留在这台设备。</div>
+          </div>
+        </div>
+      </span>
+      <span class="已改" id="viewTemp" hidden title="当前视图的条件被你临时改过,还没存">已改
+        <button type="button" onclick="打开另存视图表单()" title="把改过的条件另存成一份新视图">另存</button>
+        <button type="button" class="淡" onclick="还原工作视图()" title="丢掉临时改动,回到这份视图原来的条件">还原</button></span>
+      <span class="toolwrap"><button class="mini" id="colBtn" type="button" onclick="toggleColMenu(event)">列显示</button><div class="menu" id="colMenu"></div></span>
+      <span class="bar-gap"></span>
+      <button class="mini" id="btnMove" type="button" onclick="window.open('运动.html','运动提醒','width=420,height=760')"
+        title="久坐运动提醒:开关、工作时段、今天做了几轮,也能「现在做一轮」;到点提醒要有桌面端来弹,只开网页时不弹">运动提醒</button>
+      <button class="mini" id="btnNote" type="button" onclick="打开便笺页()"
+        title="随手记一条:只写正文,事项自动取正文第一行;以后点「转成待办」再补日期和星级">便笺</button>
+      <button class="主钮" id="btnAdd" type="button" onclick="openCard()">＋ 添加</button>
+      <button type="button" class="次钮 回收站钮" id="btnTrash" onclick="开回收站()"
+        title="删掉的待办先放在这儿,点开能「↩ 还原」放回原处">回收站 <b class="计">0</b></button>
+    </div>
+    <div class="表条 批条" id="bulkBar"></div>
+  </div>
+
+  <div class="list-note">
+    <span id="listNote"></span>
+  </div>
+
+  <div class="筛条" id="advChips" hidden></div>
+
+  <div class="表框外"><div class="表框 tscroll">
+      <table class="task-table 勾选表">
+        <thead><tr>
+          <th class="cchk 勾列" data-列="勾选"><input type="checkbox" id="selAll" title="全选当前可见行" onclick="toggleSelAll(this.checked)"></th>
+          <th class="cid" data-列="ID" title="数据 ID:每条待办 / 便笺新建时自动发的号,不会变;点它打开详情,搜索框里打它能直接找到">ID</th>
+          <th class="cstar" data-col="重要" data-列="重要程度">重要程度</th>
+          <th class="cmatter" data-列="事项">事项</th>
+          <th class="csub" data-col="子待办" data-列="子待办" title="▸2 = 底下有 2 条子待办(点它展开 / 收起);└ = 这一行本身是子待办;空着 = 没有子待办">子待办</th>
+          <th class="caddsub" data-col="加子待办" data-列="加子待办" title="点 ＋ 给这条待办拆一条子待办出来(只能拆一层,子待办那一行没有 ＋)">加子待办</th>
+          <th class="cprog" data-col="进度" data-列="进度" title="量化待办的完成进度 = 已挂的关联数 ÷ 目标数;不是量化待办的这一格空着">进度</th>
+          <th class="cfile" data-col="附件" data-列="附件" title="🖼 = 图片张数,📎 = 文件个数(只数这条待办本身的,评论里的不算);空着 = 没有附件">附件</th>
+          <th data-col="关联标签" data-列="关联数据">关联数据</th>
+          <th data-col="计划完成" data-列="计划完成时间">计划完成时间</th>
+          <th data-col="状态" data-列="状态" title="这一列能改:点格里的 ✎ 改状态">状态 ✎</th>
+          <th class="cctime 可排" data-col="创建" data-列="创建日期" data-sort="创建" title="这条待办新建的那天;点表头按它排(再点倒过来,第三下回默认排序)">创建日期</th>
+          <th class="cctime 可排" data-col="最后修改" data-列="最后修改日期" data-sort="最后修改" title="内容最后一次被改的那天(只是打开查看不算);点表头按它排(再点倒过来,第三下回默认排序)">最后修改日期</th>
+        </tr></thead>
+        <tbody id="tb"></tbody>
+      </table>
+  </div></div>
+  <div class="table-foot"><span id="ordNote">逾期 → 今日 → 未排期</span></div>
+  </div>
+</section>
+</div>
+
+<div id="detailView" class="hidden">
+  <nav class="crumb" id="dCrumb"></nav>
+  <div id="detailNavFail" class="detail-save-fail hidden" role="alert" aria-live="assertive"></div>
+  <div id="dBody"></div>
+</div>
+
+<div id="cardPage" class="hidden"></div>
+</div>
+
+<div class="mask hidden" id="noteMask">
+  <div class="modal" id="noteBox">
+    <div class="mh"><span id="noteIdBox" class="notectime" title="这张便笺的数据 ID,新建时自动发的,不会变;搜索框里打它能直接找到" hidden></span><span class="grow" id="noteTitle">便笺</span>
+      <span class="note-head-acts" id="noteHeadActs">
+      <button class="ic" id="noteNewBtn" type="button" title="从头写一张新的便笺(正在改的这张会先存好)" aria-label="新建便笺"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="ic" id="noteFindBtn" type="button" title="在这张便笺的正文里找字(Ctrl+F)" aria-label="查找" hidden><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></button>
+      <button class="ic" id="noteLookBtn" type="button" title="外观:主题、颜色、背景图、字体、标签区高度、整窗缩放" aria-label="外观"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5a8.5 8.5 0 100 17c1 0 1.7-.7 1.7-1.6 0-.5-.2-.8-.5-1.1-.3-.3-.5-.7-.5-1.1 0-.9.7-1.6 1.6-1.6h2a4.2 4.2 0 004.2-4.2c0-4.1-3.8-7.4-8.5-7.4z"/><circle cx="7.6" cy="11" r=".9"/><circle cx="10.4" cy="7.4" r=".9"/><circle cx="15" cy="7.6" r=".9"/></svg></button>
+      <button class="ic" id="noteMdBtn" type="button" aria-pressed="false" title="Markdown 两栏:左边改正文的 Markdown 原文,右边实时看效果;再点一下切回块编辑" aria-label="Markdown"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 15V9l2.5 3L11 9v6M16.5 9v6M14.3 12.8l2.2 2.2 2.2-2.2"/></svg></button>
+      <button class="ic full" id="noteFull" title="放大" aria-label="放大">⤢</button>
+      <button class="ic" onclick="closeNote()" title="关闭" aria-label="关闭">✗</button></span></div>
+    <div class="notetabs" id="noteTabs"></div>
+    <div class="ntresize" id="noteTabsResize" role="separator" aria-orientation="horizontal"
+         aria-label="便笺标题列表的高度" tabindex="0"
+         title="上下拖这条线,改上面那排便笺标题露几行;双击复原;点中它按 ↑ ↓ 也能调"></div>
+    <div class="mb">
+      <div class="notetitle-row" data-ai-title-root>
+        <div class="notefind" id="noteFind" role="search" hidden>
+          <select id="noteFindScope" class="notefind-范围" aria-label="搜索范围"
+            title="本便笺 = 只找这张正文里的字;全部便笺 = 找所有便笺的标题和正文,列出来点哪张开哪张"><option value="本">本便笺</option><option value="全">全部便笺</option></select>
+          <label class="快搜 notefind-框"><span class="快搜-镜" aria-hidden="true"><svg class="线标" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></span><input id="noteFindIn" type="search" placeholder="搜索本便笺…" autocomplete="off" spellcheck="false"
+            aria-label="在这张便笺的正文里查找" title="只找这张便笺的正文;Enter 下一个,Shift+Enter 上一个,Esc 关掉"><button type="button" class="快搜-清" title="清空" aria-label="清空" hidden>✗</button></label>
+          <span id="noteFindCnt" aria-live="polite"></span>
+          <button type="button" data-find="-1" title="上一个(Shift+Enter)" aria-label="上一个">▴</button>
+          <button type="button" data-find="1" title="下一个(Enter)" aria-label="下一个">▾</button>
+          <button type="button" data-find="x" title="关掉搜索,标题回来(Esc)" aria-label="关掉搜索">✗</button>
+          <div class="notefind-hits" id="noteFindHits" role="listbox" aria-label="全部便笺里的命中" hidden></div>
+        </div>
+        <input id="noteTitleIn" class="notetitle" type="text" maxlength="200" autocomplete="off"
+          placeholder="标题(空着就用正文第一行)"
+          title="这一行就是待办列表里显示的那个名字。改了它,列表里那一行当场跟着改;空着就还是用正文第一行。">
+        <button class="aititle-btn note-large-only" type="button" data-ai-title aria-label="AI 拟标题"
+          title="按当前正文拟一个标题;拟好先给你看,点「采用」才会替换">✦</button>
+      </div>
+      <div class="aititle-result" data-ai-title-result aria-live="polite"></div>
+      <div class="dsec note-body-sec">
+        <div class="doc" data-doc></div>
+        <div class="note-md" id="noteMd" hidden>
+          <div class="md-cols">
+            <div class="md-pane">
+              <div class="md-h"><b>Markdown</b><span id="noteMdMsg" class="md-msg" aria-live="polite"></span><button type="button" class="小钮 md-复制" id="noteMdStd" title="复制到剪贴板,贴进 Typora、Obsidian 这些别的 Markdown 软件格式不乱;左边原文本身不变">复制为标准 Markdown</button></div>
+              <textarea id="noteMdIn" class="md-in" spellcheck="false" aria-label="Markdown 原文"
+                title="这张便笺正文的 Markdown 原文,存的就是这些字;切回块编辑看到的也是这些字。改完停手一下,右边预览跟着变,正文自己会存;撤销用 Ctrl+Z。&#10;行首两个空格 = 缩进一层; 是日期块等 Markdown 写不出来的东西,别改号,切回块编辑里改。"></textarea>
+            </div>
+            <div class="md-pane">
+              <div class="md-h"><b>预览</b><span class="md-msg" title="右边只读,改字在左边。在右边选中一段字,左边原文就选中对应那几行并滚过去">选中字,左边跟着定位</span></div>
+              <div class="md-view" id="noteMdView" aria-label="预览(只读)" aria-live="off"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dsec note-link-sec">
+        <div class="dsec-h"><b>关联数据</b></div>
+        <div class="chips" data-cardlinks></div>
+      </div>
+      <div class="note-large-actions note-large-only">
+        <button class="次钮" type="button" data-note-archive>归档便笺</button>
+        <button class="次钮" type="button" data-note-to-todo>转成待办</button>
+      </div>
+      <div class="foot notefoot">
+        <span class="note-tools">
+          <button class="nt-ic" type="button" data-add="text" title="文字:接一段文字" aria-label="文字"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="nt-ic" type="button" data-add="img" title="图片:从电脑里选一张图插进正文" aria-label="图片"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8 8"/></svg></button>
+          <button class="nt-ic" type="button" data-add="file" title="文件:从电脑里选一个文件插进正文,插进去能下载、能按住拖走" aria-label="文件"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5l-7.8 7.8a5 5 0 01-7.1-7.1l8.5-8.5a3.3 3.3 0 014.7 4.7l-8.5 8.5a1.7 1.7 0 01-2.4-2.4l7.8-7.8"/></svg></button>
+          <button class="nt-ic" type="button" data-undo disabled title="撤销" aria-label="撤销"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/></svg></button>
+          <button class="nt-ic" type="button" data-redo disabled title="还原" aria-label="还原"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M20 9H10a6 6 0 000 12h3"/></svg></button>
+          <button class="nt-ic" type="button" data-cardlinkadd title="关联:从接进来的数据里搜着挑,挂到这条上" aria-label="关联"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3a4 4 0 005.7 5.7l1-1"/></svg></button>
+          <button class="nt-ic note-large-only" type="button" data-history disabled title="历史:看这张便笺一个月内的修改快照" aria-label="历史"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></button>
+          <button class="nt-ic note-large-only" type="button" data-ai速记 title="AI 速记:整理当前正文" aria-label="AI 速记"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l1.8 4.7 4.7 1.8-4.7 1.8L12 17l-1.8-4.7-4.7-1.8 4.7-1.8z"/></svg></button>
+        </span>
+        <span class="notefoot-left">
+          <span id="noteCtime" class="notectime note-large-only" hidden></span>
+          <span id="noteSaveState" class="savestate 截留钮" aria-live="polite"><span class="截一行">改了自己会存,不用点保存</span></span>
+        </span>
+        <button class="nt-ic solo-only" type="button" onclick="独窗去列表()" title="待办列表:打开完整的待办列表;这张便笺先存好,小窗随后关掉" aria-label="待办列表"><svg class="线标" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      </div>
+    </div>
+    <div class="便笺外观" id="noteLook" hidden role="dialog" aria-modal="true" aria-labelledby="noteLookH">
+      <div class="外观卡">
+        <div class="外观滚">
+        <h3 id="noteLookH">外观 / 主题</h3>
+        <section class="外观段">
+          <h4 class="外观段名">主题</h4>
+          <div class="外观行"><span class="外观名">主题</span>
+            <select id="lkTheme" title="亮色 / 暗色 / 护眼是内置三套;另存的自定义主题排在后面"></select></div>
+          <div class="外观行"><input type="text" id="lkNewName" placeholder="新主题名" spellcheck="false" aria-label="新主题名">
+            <button type="button" class="外观小钮" id="lkSaveAs" title="把现在这套颜色另存成一个自定义主题">另存为主题</button></div>
+        </section>
+        <section class="外观段">
+          <h4 class="外观段名">颜色</h4>
+          <div class="外观色格">
+            <label class="外观色" title="便笺的底色"><input type="color" data-tk="bg"><span class="外观色名">背景</span></label>
+            <label class="外观色" title="正文和标题的字色"><input type="color" data-tk="text"><span class="外观色名">正文</span></label>
+            <label class="外观色" title="按钮、链接、选中处的颜色"><input type="color" data-tk="accent"><span class="外观色名">强调色</span></label>
+            <label class="外观色" title="便笺外框和分隔线"><input type="color" data-tk="border"><span class="外观色名">边框</span></label>
+            <label class="外观色" title="窗口最上面那一行(按住能拖窗)"><input type="color" data-tk="dragBar"><span class="外观色名">标题栏</span></label>
+            <label class="外观色" title="上面那排便笺标题里正开着的那一张"><input type="color" data-tk="tabActive"><span class="外观色名">当前标签</span></label>
+            <label class="外观色" title="上面那排正开着的那张标签上的字;默认自动挑看得清的那个,动了这格就按你挑的,点「恢复默认」回自动"><input type="color" data-tk="tabText"><span class="外观色名">标签字色</span></label>
+          </div>
+          <div class="外观行"><span class="外观名" title="正文字色压在背景上的对比度,WCAG AA 正文门槛 4.5:1">对比度</span>
+            <span class="外观注" id="lkContrast" aria-live="polite">—</span></div>
+        </section>
+        <section class="外观段">
+          <h4 class="外观段名">背景图</h4>
+          <div class="外观行"><span class="外观名" title="一张图铺满便笺底;存在这台机器的浏览器里,不进库">背景图</span>
+            <button type="button" class="外观小钮" id="lkBgPick" title="png / jpg / webp / gif / bmp,8MB 以内;大图会先缩到长边 1600 再存">选择图片…</button>
+            <button type="button" class="外观小钮" id="lkBgClear">清除</button>
+            <span class="外观注" id="lkBgName">未设置</span>
+            <input type="file" id="lkBgFile" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" hidden></div>
+          <div class="外观行"><span class="外观名" title="图片怎么摆进便笺,跟 Windows 桌面背景那几种一样:填充 = 等比放大铺满、多出来的裁掉;适应 = 整张图都露出来、空出来的地方是背景色;拉伸 = 拉满便笺、不管比例;平铺 = 原大小一张张排满;居中 = 原大小放正中">契合度</span>
+            <select id="lkBgFit" title="没设背景图时不能选">
+              <option value="fill">填充</option><option value="fit">适应</option><option value="stretch">拉伸</option><option value="tile">平铺</option><option value="center">居中</option>
+            </select></div>
+          <div class="外观行"><span class="外观名" title="图跟便笺比例不一样时靠哪头摆:填充裁掉的是另一头,适应空出来的是另一头;图比便笺宽选左右,比便笺高选上下;拉伸、平铺、居中用不上">对齐</span>
+            <select id="lkBgAlign" title="没设背景图时不能选">
+              <option value="center">居中</option><option value="top">顶部</option><option value="bottom">底部</option><option value="left">左侧</option><option value="right">右侧</option>
+            </select></div>
+          <div class="外观行"><span class="外观名" title="图片透出来多少;越高图越显、字越难看清;100% = 原图,不盖底色">图片浓度</span>
+            <input type="range" min="0" max="100" step="1" id="lkBgImgOp"><span class="外观值" id="lkBgImgVal"></span></div>
+        </section>
+        <section class="外观段">
+          <h4 class="外观段名">边框</h4>
+          <div class="外观行"><span class="外观名" title="边框线的不透明度;100% = 实线">不透明度</span>
+            <input type="range" min="0" max="100" data-tk="borderOpacity"><span class="外观值" data-val="borderOpacity"></span></div>
+          <div class="外观行"><span class="外观名" title="每档 0.5px;屏上画线会贴到整像素,细处几档才变一下">粗细</span>
+            <input type="range" min="0" max="12" step="0.5" data-tk="borderW"><span class="外观值" data-val="borderW"></span></div>
+          <div class="外观行"><span class="外观名" title="边框颜色往里柔和地化开,不是一条硬线;0 = 不化开。颜色跟「边框」和边框不透明度走">羽化</span>
+            <input type="range" min="0" max="40" step="1" data-tk="borderFeather"><span class="外观值" data-val="borderFeather"></span></div>
+        </section>
+        <section class="外观段">
+          <h4 class="外观段名">窗口与文字</h4>
+          <div class="外观行"><span class="外观名" title="顶栏、标签、正文、底栏的底色一起透,有背景图时图也跟着淡,字和细线不透;100% = 不透;要窗口真透出桌面得外壳程序开透明窗,没开时透出的是页面底色">背景不透明度</span>
+            <input type="range" min="0" max="100" data-tk="bgOpacity"><span class="外观值" data-val="bgOpacity"></span></div>
+          <div class="外观行"><span class="外观名" title="窗口四角的圆角;0 = 默认(独立小窗是直角,网页里的浮窗照旧小圆角)。圆角外面透出桌面要外壳程序开透明窗">圆角</span>
+            <input type="range" min="0" max="24" step="1" data-tk="radius"><span class="外观值" data-val="radius"></span></div>
+          <div class="外观行"><span class="外观名" title="上面那排便笺标题露多高;也可直接拖标题排下面那条线">标签区高度</span>
+            <input type="range" min="34" max="240" step="1" id="lkBarH"><span class="外观值" id="lkBarHVal"></span>
+            <button type="button" class="外观小钮" id="lkBarHAuto" title="不限高,按标题条数自然展开(同双击那条线)">自然</button></div>
+          <div class="外观行" id="lkZoomRow"><span class="外观名">整窗缩放</span>
+            <button type="button" class="外观小钮" data-zoom="-" title="缩小一档(每档 10%)" aria-label="缩小">−</button>
+            <span class="外观值" id="lkZoomVal">—</span>
+            <button type="button" class="外观小钮" data-zoom="+" title="放大一档(每档 10%)" aria-label="放大">＋</button>
+            <button type="button" class="外观小钮" data-zoom="0" title="回到默认大小">复位</button>
+            <span class="外观注" id="lkZoomHint">也可 Ctrl+滚轮 / Ctrl±</span></div>
+          <div class="外观行"><span class="外观名">正文字体</span>
+            <select data-tk="font">
+              <option value="system">系统默认</option>
+              <option value="yahei">微软雅黑 / 苹方</option>
+              <option value="mono">等宽</option>
+              <option value="song">宋体</option>
+              <option value="kai">楷体</option>
+            </select></div>
+        </section>
+        </div>
+        <div class="外观钮排">
+          <button type="button" class="次钮" id="lkReset" title="把这套内置主题改过的颜色还原出厂">恢复默认</button>
+          <button type="button" class="次钮" id="lkDelete" title="删掉这个自定义主题,回到它底下那套内置主题">删除</button>
+          <span class="grow"></span>
+          <button type="button" class="次钮" id="lkCancel" title="丢掉这次的改动(Esc 同)">取消</button>
+          <button type="button" class="主钮" id="lkSave">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask hidden" id="cardMask">
+  <div class="modal sm" id="cardBox">
+    <div class="mh">
+      <span class="grow" id="cardTitle">建待办</span>
+      <button class="ic full" id="cardFull" title="放大" aria-label="放大">⤢</button>
+      <button class="ic" onclick="请求关闭待办()">✗</button>
+    </div>
+    <div class="mb">
+      <div class="dgrid">
+        <div class="dmain">
+          <div class="row card-matter-row">
+            <label id="cardMatterLab">事项(空着就取正文第一行)</label>
+            <div class="cardmatter" id="cardMatter" contenteditable="true" spellcheck="false"
+                 data-ph="要做什么…"></div>
+          </div>
+          <div id="cardSubHint" class="hidden"></div>
+          <div class="card-core-sm">
+            <div id="cardStatusSlotSm"></div>
+            <div id="cardStarsSlotSm"></div>
+            <div id="cardDueSlotSm"></div>
+          </div>
+          <div class="card-sub-sm" data-cardsubsummary-row>
+            <span>子待办 <b data-cardsubsummary>0/0</b></span>
+            <span class="acts">
+              <button class="次钮" type="button" data-cardopenfirst>进入</button>
+              <button class="次钮" type="button" data-cardsubadd-sm>＋ 新建</button>
+            </span>
+          </div>
+          <div class="dsec">
+            <div class="dsec-h card-body-head"><span class="acts">
+              <button class="addbtn" data-add="text" title="接一段文字">＋ 文字</button>
+              <button class="addbtn" data-add="img" title="从电脑里选一张图插进正文">🖼 图片</button>
+              <button class="addbtn" data-undo disabled>↶ 撤销</button>
+              <button class="addbtn" data-redo disabled>↷ 还原</button>
+              <button class="addbtn" data-history disabled>🕐 历史</button>
+              <button class="addbtn" data-ai速记 title="整理当前正文">✨ AI 速记</button>
+            </span></div>
+            <div class="doc" data-doc></div>
+          </div>
+          <div class="dsec card-link-sm">
+            <div class="dsec-h"><b>关联数据</b><span class="acts">
+              <button class="次钮" data-cardlinkadd title="从接进来的数据里搜着挑,挂到这条上">关联</button>
+            </span></div>
+            <div class="chips" data-cardlinks></div>
+          </div>
+        </div>
+
+        <aside class="dside">
+          <div class="sf">
+            <div class="sf-h"><b>属性</b></div>
+            <div class="g2">
+              <div id="cardStatusSlotLg"><div id="cardStatusBox"><span class="sl">状态</span>
+                <select class="stsel" id="cardStatus"><option>未开始</option><option>进行中</option><option>已完成</option></select></div></div>
+              <div id="cardStarsSlotLg"><div id="cardStarsBox"><span class="sl">重要程度</span>
+                <span class="stars" id="cardStars" title="点第几颗就是几星(三颗满)"></span></div></div>
+            </div>
+            <div id="cardDueSlotLg">
+              <div id="cardDueBox" style="margin-top:12px"><span class="sl">计划完成时间</span>
+                <input type="date" id="cardDate" title="打算哪天做完(交付时间);空着=没排期"></div>
+            </div>
+            <div id="cardTargetWrap" style="margin-top:12px;display:none"><span class="sl">目标数(量化 · 可选)</span>
+              <input type="number" min="1" id="cardTarget" placeholder="如 100"></div>
+          </div>
+          <div class="sf card-sub">
+            <div class="sf-h"><b>子待办 <span class="cnt" data-cardsubcnt>0</span></b>
+              <button class="次钮" data-cardsubadd title="这张卡存下来之后才能加子待办">＋ 添加</button></div>
+            <div data-cardsublist></div>
+          </div>
+          <div class="sf">
+            <div class="sf-h"><b>关联数据</b>
+              <button class="次钮" data-cardlinkadd title="从接进来的数据里搜着挑,挂到这条上">关联</button></div>
+            <div class="sf-note">这条待办挂着的关联数据</div>
+            <div class="chips" data-cardlinks></div>
+          </div>
+          <div class="sf">
+            <div class="sf-h"><b>附件</b>
+              <label class="次钮" title="PDF / Excel / CSV 这类非图文件;图片请用正文里的「🖼 图片」">添加文件<input type="file" multiple data-cardfilepick hidden></label></div>
+            <div class="sf-note">非图文件,点名字下载</div>
+            <div data-cardfilelist></div>
+          </div>
+          <div class="sf" data-cardmeta></div>
+          <div class="sf">
+            <div class="sf-note" style="margin:0 0 6px">归档后保留记录,默认隐藏</div>
+            <input type="checkbox" id="cardArch" hidden>
+            <button class="次钮 act3 arch" type="button" id="cardArchBtn" aria-pressed="false"
+              title="归档=从列表里收起来,记录一个字不删;再点一下就取消归档">归档</button>
+          </div>
+          <div class="sf" data-cardcmt>
+            <div class="sf-h"><b>评论</b></div>
+            <div class="sf-note" style="margin:0">这张卡还没保存,存下来之后才能写评论。</div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <div class="cardfoot">
+      <span id="cardSaveState" class="savestate card-save-state" aria-live="polite">尚未保存</span>
+      <span class="grow"></span>
+      <span id="cardFoot"></span>
+    </div>
+  </div>
+</div>
+
+<div class="mask hidden" id="advMask">
+  <div class="modal" style="width:min(560px,94vw)">
+    <div class="mh"><span class="grow">⚙ 高级筛选</span><button class="ic" onclick="closeAdv()">✗</button></div>
+    <div class="mb">
+      <div class="adv-base">
+        <label class="fld" id="fldSrc" style="display:none" title="看哪个来源的待办">来源
+          <select id="fSrc" onchange="建关联下拉();画adv行()"><option value="">全部</option></select></label>
+        <label class="fld" title="只看挂着这类关联数据的待办">关联
+          <select id="fLink"><option value="">全部</option></select></label>
+      </div>
+      <div class="mode-hint">多条件逐行折叠:每行的「且/或」只接到上面已有的结果 —— A 或 B 且 C = 先算(A 或 B)再且 C。</div>
+      <div id="advRows"></div>
+      <div style="margin-top:8px"><button class="次钮" onclick="advAddRow()">＋ 加条件</button></div>
+      <div class="foot" style="margin-top:12px">
+        <button class="次钮" onclick="closeAdv()">取消</button>
+        <button class="主钮" onclick="advApply()">应用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<input type="file" id="dFilePick" accept="image/*" hidden>
+<input type="file" id="dBlockFilePick" hidden>
+<div id="soloDone" hidden><span id="soloDoneMsg">便笺存好了,可以关掉这个窗口</span>
+  <button class="次钮" type="button" onclick="独窗再写()">再写一张</button></div>
+
+<script src="页眉侧栏.js"></script>
+<script src="第三方/prism-1.30.0.js"></script>
+<script src="块md.js"></script>
+<script src="待办.js"></script>
+</body>
+</html>

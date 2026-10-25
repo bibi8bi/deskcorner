@@ -1,0 +1,3822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI接入底座 · 设置</title>
+<script>
+(() => {
+  try {
+    let 主题 = localStorage.getItem("ui:主题");
+    if (!主题) {
+      const 旧 = localStorage.getItem("ai-base-主题");
+      if (旧 === "dark" || 旧 === "light")
+        localStorage.setItem("ui:主题", 主题 = 旧);
+    }
+    localStorage.removeItem("ai-base-主题");
+    if (["light", "dark", "eye"].includes(主题))
+      document.documentElement.setAttribute("data-theme", 主题);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="共用.css">
+<link rel="stylesheet" href="表格.css">
+<style>
+  body { background: var(--面); }
+  h1 { margin: 0 0 2px; }
+  .说明 { margin: 0 0 14px; color: var(--次); font-size: var(--f1); }
+
+  .块[hidden] { display: none !important; }
+  .块 { padding-bottom: 24px; }
+  .块题 { margin: 0 0 10px; font-size: var(--f5); }
+  .side-数 { margin-left: auto; color: var(--次); font-variant-numeric: tabular-nums; }
+  .side-锚组[hidden] { display: none; }
+  #side button.side-项 { width: 100%; border: 0; background: transparent; font: inherit; text-align: left; }
+  #side button.side-项:hover { background: var(--浮); }
+  #side button.side-项.cur { background: var(--蓝浅); }
+
+  .表区 { margin-bottom: 18px; background: var(--bg); border: 1px solid var(--线);
+          border-radius: var(--r大); overflow: hidden; }
+  .表区 > .表名 { padding: 10px 12px; border-bottom: 1px solid var(--线); }
+  .表名 .表动作 { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .表内展开 { padding: 10px 12px; border-bottom: 1px solid var(--线); background: var(--面); }
+  .表内展开:empty, .表内展开:not(:has(> :not([hidden]))) { display: none; }
+  .主表 { width: 100%; border-collapse: collapse; background: var(--bg); }
+  .主表 tr.主行 { cursor: pointer; }
+  .主表 tr.主行:hover > td { background: var(--面); }
+  .主表 tr.主行.关 > td { opacity: .55; }
+  .主表 tr.主行.开 .箭 { transform: rotate(90deg); }
+  .主表 tr.展行 > td { padding: 0; background: var(--面); }
+  .主表 tr.展行[hidden] { display: none; }
+  .展开肉 { padding: 12px; border-bottom: 1px solid var(--线); }
+  .供应商表 th:nth-child(4), .供应商表 td:nth-child(4),
+  .供应商表 th:nth-child(5), .供应商表 td:nth-child(5) { text-align: right; }
+
+  td.号格 { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--次); }
+  .供应商表 th:last-child, .供应商表 td:last-child,
+  .功能表 th:last-child, .功能表 td:last-child { width: 1%; white-space: nowrap; }
+
+  .供应商详情 .藏详 { margin-top: 10px; max-height: none; overflow-y: visible; }
+  .功能表 { min-width: 1180px; }
+
+  .功能表 select.模选 { min-width: 200px; max-width: 280px; width: 100%; }
+  .功能表 td > select:not(.模选) { max-width: 170px; }
+  .功能表 button { white-space: nowrap; }
+  .wrap { max-width: var(--页宽); margin-inline: auto; }
+  .页头行 { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .页头行 h1 { min-width: 0; }
+  .供应商表, .功能表 { table-layout: fixed; }
+  .供应商表 col:nth-child(1) { width: 76px; }
+  .供应商表 col:nth-child(2) { width: 220px; }
+  .供应商表 col:nth-child(3) { width: 110px; }
+  .供应商表 col:nth-child(4) { width: 90px; }
+  .供应商表 col:nth-child(5) { width: 80px; }
+  .供应商表 col:nth-child(7) { width: 40px; }
+
+  .功能表 col:nth-child(1) { width: 76px; }
+  .功能表 col:nth-child(2) { width: 150px; }
+  .功能表 col:nth-child(3) { width: 130px; }
+  .功能表 col:nth-child(4) { width: 230px; }
+  .功能表 col:nth-child(5) { width: 110px; }
+  .功能表 col:nth-child(6) { width: 50px; }
+  .功能表 col:nth-child(7) { width: 70px; }
+  .功能表 col:nth-child(9) { width: 216px; }
+  .功能表 col:nth-child(10) { width: 36px; }
+  .供应商表 th:nth-child(4), .供应商表 td:nth-child(4),
+  .供应商表 th:nth-child(5), .供应商表 td:nth-child(5),
+  .功能表 th:nth-child(6), .功能表 td:nth-child(6) { text-align: right; }
+  .供应商表 th, .供应商表 td, .功能表 th, .功能表 td { overflow-wrap: anywhere; }
+  .供应商表 select, .功能表 select { width: 100%; min-width: 0; max-width: none; }
+  table.功能表 .功能名格 { min-width: 0; white-space: normal; }
+  table.功能表 .提示格 { min-width: 0; }
+  .主表 tr:first-child > th { background: var(--面2); }
+  .主表 tr.主行.开 > td { background: var(--面2); }
+  .主表 tr.主行.开 > td:first-child { font-weight: 700; }
+  .主表 tr.展行 > td { background: var(--面); border-top: 1px solid var(--边); border-bottom: 1px solid var(--边); }
+
+  .主表 tr.主行.开 > td { background: var(--蓝浅); color: var(--蓝深); border-top: 2px solid var(--蓝); }
+  .主表 tr.主行.开 > td:first-child { border-left: 2px solid var(--蓝); }
+  .主表 tr.主行.开 > td:last-child { border-right: 2px solid var(--蓝); }
+  .主表 tr.主行.开 + tr.回执行 > td { border-left: 2px solid var(--蓝); border-right: 2px solid var(--蓝); }
+  .主表 tr.主行.开 + tr.回执行 + tr.展行 > td { border: 2px solid var(--蓝); border-top: 0; }
+
+  .主表 tr.主行.开 + tr.展行 > td { border: 2px solid var(--蓝); border-top: 0; }
+  .功能表 .备表 th, .功能表 .备表 td { text-align: left; overflow-wrap: normal; }
+  .备表 tr.备行.首 > td { background: var(--面2); }
+  .备表 td.序 small { display: block; font-weight: 400; font-size: var(--f1); }
+  .功能表 .备表 td:nth-child(3) { width: 200px; }
+  .功能表 .备表 td:nth-child(5) select { min-width: 120px; }
+  .展开肉, .主表 .功能详情 { padding: 12px 16px; }
+  .供应商详情 .滚:has(.模表), .功能详情 .滚:has(.备表) {
+    border: 1px solid var(--边); border-radius: var(--r中); background: var(--bg);
+  }
+  .供应商详情 .模表 tr:first-child > th, .功能详情 .备表 tr:first-child > th { background: var(--面2); }
+  .设格 { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; align-items: center; }
+  .设格 > .签 { align-self: center; font-size: var(--f1); color: var(--次); white-space: nowrap; cursor: help; }
+  .设格 > .值 { min-width: 0; align-self: center; }
+  .设格 .地址 { margin: 0; max-width: 720px; }
+  .设格 > .签:first-child + .值 input[type="text"] { max-width: 720px; }
+
+  .设格 .回执:empty { display: none; }
+  .功能详情 .详情动作 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .功能表 td { vertical-align: middle; }
+  .功能表 .功能名格 { min-width: 150px; font-weight: 700; }
+  .功能表 .提示格 { min-width: 180px; }
+  .功能表 .提示格 > * + * { margin-left: 12px; }
+  .功能表 .提示格 .态 { white-space: normal; }
+
+  .功能表 .回执行:not(:has(.回执:not(:empty), img, .调用-等)) { display: none; }
+  .功能表 .回执行 > td { padding: 0 9px 8px; }
+  .功能详情 { padding: 10px 12px 12px; }
+  .功能详情 > .说明全文 { margin-bottom: 8px; color: var(--次); }
+  .功能详情 .备注框 { width: min(520px,100%); }
+  .功能详情 .并框 { width: 7em; }
+  .数值 { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .卡 { background: var(--bg); border: 2px solid var(--线); border-radius: var(--r大);
+        overflow: hidden; margin-bottom: 8px; }
+  .卡 > .冠 { padding: 9px 13px; background: var(--面); }
+  .卡 > .肉 { padding: 11px 13px 13px; }
+  .卡.独 { padding: 11px 13px 13px; }
+
+  .并排 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr));
+          gap: 10px; align-items: start; }
+  .并排 > .卡 { margin-bottom: 0; }
+  .卡.堵 { border-color: var(--红); }
+  .卡.堵 > .冠 { background: var(--红浅); }
+  .卡.堵 > .冠 .名, .卡.堵 > .冠 .功名 { color: var(--红); }
+  .卡.提 { border-style: dashed; border-color: var(--琥); }
+  .卡.提 > .冠 { background: var(--琥浅); }
+  .卡.提 > .冠 .名, .卡.提 > .冠 .功名 { color: var(--琥); }
+  .卡.成 { border-width: 1.5px; border-color: var(--青边); }
+  .卡.成 > .冠 { background: var(--青浅); }
+  .卡.成 > .冠 .名, .卡.成 > .冠 .功名 { color: var(--青); }
+  .卡.素 { border-width: 1px; }
+
+  .卡.关 { opacity: .55; }
+  .卡.关:hover, .卡.关:focus-within { opacity: 1; }
+
+  .区 { border: 1px solid var(--线); border-left: 6px solid var(--sc, var(--边));
+        border-radius: var(--r大); overflow: hidden; background: var(--bg); margin-bottom: 10px; }
+
+  .区头 { display: flex; align-items: center; gap: 8px; padding: 10px 13px; min-height: 44px;
+          cursor: pointer; flex-wrap: wrap; background: var(--面);
+          background: color-mix(in srgb, var(--sc, var(--面)) 12%, var(--bg)); }
+  .区头 .图 { font-size: 15px; }
+  .区头 .区名 { font-weight: 750; font-size: var(--f3); color: var(--sc, var(--字)); }
+  .区头 .数 { color: var(--次); font-size: var(--f1); }
+  .箭 { margin-left: auto; font-size: var(--f1); transition: transform var(--快); color: var(--次); }
+  .区头 .箭 { color: var(--sc, var(--次)); }
+  .区.open > .区头 .箭 { transform: rotate(90deg); }
+  .区肉 { display: none; padding: 10px 11px 12px; }
+  .区.open > .区肉 { display: block; }
+
+  .区.备 { border-style: dashed; border-left-width: 1px; border-left-color: var(--边);
+           background: var(--面); margin: 10px 0 0; }
+  .区.备 > .区头 { background: transparent; min-height: 38px; padding: 7px 11px; }
+  .区.备 > .区头 .区名 { color: var(--次); font-size: var(--f1); }
+  .区.备 > .区头 .箭 { color: var(--次); }
+
+  .区.备 .卡 { margin-left: 10px; border-left-width: 3px; border-left-color: var(--边); }
+
+  .卡 > .冠 { cursor: pointer; min-height: 44px; }
+  .卡:not(.收) > .冠 .箭 { transform: rotate(90deg); }
+  .卡.收 > .肉 { display: none; }
+
+  .步号 { color: var(--弱); font-variant-numeric: tabular-nums; min-width: 12px; }
+
+  .开场 button.mini, #配置报错 button { min-height: 44px; min-width: 44px; }
+  #配置报错 .表条 { flex-wrap: wrap; }
+  body.配置没读出 section.块 { display: none; }
+  .开场 .态 { white-space: normal; }
+
+  .待 { color: var(--次); }
+
+  .荐 { font-size: var(--f1); color: var(--次); margin-top: 5px; cursor: help; }
+  .荐.警 { color: var(--琥); }
+
+  .卡头 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .名 { font-weight: 700; font-size: var(--f3); }
+  .功名 { font-weight: 700; font-size: var(--f3); }
+
+  .说 { font-size: var(--f1); color: var(--次); font-weight: 400; cursor: help;
+        flex: 0 1 auto; min-width: 0; max-width: 60ch;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .tag { font-size: var(--f0); font-weight: 700; border-radius: var(--r小); padding: 1px 6px;
+         white-space: nowrap; flex: 0 0 auto; cursor: help; }
+  .t红 { color: var(--反字); background: var(--红); }
+  .t琥 { color: var(--琥); background: var(--琥浅); }
+  .t蓝 { color: var(--蓝); background: var(--蓝浅); }
+  .t灰 { color: var(--次); background: var(--面); border: 1px dashed var(--边); }
+  .t青 { color: var(--青); background: var(--青浅); }
+
+  .地址 { font-size: var(--f1); color: var(--次); word-break: break-all; margin: 0 0 7px;
+          font-family: var(--等宽); }
+  .行 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+  .行 + .行 { margin-top: 8px; }
+
+  .模块 { flex: 1 1 100%; min-width: 0; }
+  .藏详 { width: 100%; min-width: 0; margin-top: 6px; padding: 6px 8px; border-radius: var(--r中);
+          background: var(--面2); }
+  .藏详 .滚 { max-width: 100%; }
+
+  .藏详 { max-height: 46vh; overflow-y: auto; }
+  .模区 { font-size: var(--f1); color: var(--次); font-weight: 700; cursor: help;
+          margin: 8px 0 2px; padding-top: 6px; border-top: 1px solid var(--边); }
+  .模区:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+  .模表 code { font-size: var(--f1); overflow-wrap: anywhere; }
+
+  .模表 { min-width: 820px; }
+  .模表 th:first-child, .模表 td:first-child { min-width: 190px; }
+  .模表 th:nth-child(5), .模表 td:nth-child(5),
+  .模表 th:nth-child(6), .模表 td:nth-child(6) { min-width: 150px; }
+
+  .模表.列宽定, .模表.列宽定 th, .模表.列宽定 td { min-width: 0; }
+
+  .模表 th:nth-child(2), .模表 td:nth-child(2),
+  .模表 th:nth-child(3), .模表 td:nth-child(3),
+  .模表 th:nth-child(4), .模表 td:nth-child(4),
+  .模表 th:nth-child(7), .模表 td:nth-child(7) { width: 1%; white-space: nowrap; }
+
+  .模表 code.灰名 { color: var(--次); text-decoration: line-through; }
+  .模表 .牌 { font-size: var(--f1); color: var(--次); white-space: nowrap; margin-left: 6px; cursor: help; }
+  .模表 .眼 { margin-left: 4px; cursor: help; }
+
+  .模表 input, .模表 button { font-size: var(--f1); }
+  .模表 input { min-height: 30px; padding: 3px 7px; width: 100%; }
+  .模表 button { padding: 3px 9px; white-space: nowrap; }
+  .模表 td, .模表 th { padding: 4px 7px; }
+  .模表 .连 { white-space: nowrap; cursor: help; }
+  .模表 .操作 { display: flex; gap: 6px; }
+
+  .模表 td.改 { overflow-wrap: anywhere; }
+  .模表 td.改.未写 { color: var(--次); }
+
+  .模表 .mini { min-width: 44px; }
+  .模区 .划 { display: none; }
+  .模区.能划 .划 { display: inline; font-weight: 400; }
+  @media (max-width: 760px) {
+
+    .模表 input { font-size: 16px; }
+  }
+
+  .卡头 .备注框 { flex: 0 1 220px; min-width: 110px; font-size: var(--f1);
+                 padding: 2px 6px; margin-left: auto; }
+  .卡头 > .箭 { margin-left: 8px; }
+  .说明行 { margin-bottom: 6px; }
+  .说明行 input { flex: 1 1 200px; font-size: var(--f1); }
+
+  .区头 .区注 { font-size: var(--f1); padding: 2px 8px; flex: 0 1 170px; min-width: 90px;
+               max-width: 240px; border: 1px solid var(--线); border-radius: var(--r小);
+               background: var(--面); color: var(--字); }
+
+  .区:not(.备) > .区头 .图 { flex: 0 0 20px; text-align: center; }
+  .区:not(.备) > .区头 .区名 { flex: 0 0 92px; min-width: 0; white-space: nowrap;
+                              overflow: hidden; text-overflow: ellipsis; }
+  .区:not(.备) > .区头 .区注 { flex: 0 0 200px; max-width: 200px; }
+  .区:not(.备) > .区头 .数 { flex: 0 0 152px; }
+
+  .区头 .网址位 { display: flex; align-items: center; gap: 6px; flex: 0 0 auto;
+                 margin-left: auto; }
+  .区:not(.备) > .区头 > .箭 { margin-left: 8px; }
+  .区头 .改址 { padding: 0 10px; color: var(--次); }
+
+  .区头 .网址位 .空址 { color: var(--次); border-style: dashed; }
+
+  .区头 .网址位 .区注 { flex: 0 0 260px; max-width: 260px; }
+  .区头 .区注.存坏了 { border-color: var(--红); }
+  .区头 .打开 { flex: 0 0 auto; }
+
+  .日志条数 { margin-bottom: 8px; }
+
+  .对 { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; }
+  label { font-size: var(--f1); color: var(--次); white-space: nowrap; }
+  input, select, button { font: inherit; }
+
+  input:where(:not([type=checkbox]):not([type=radio])), select, button { min-height: 30px; }
+
+  button.主钮, button.mini { min-height: 30px; }
+
+  .模表 button.mini, .备表 button.mini { min-height: 30px; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 520px) {
+    .设格 { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+    .设格 > .值 { margin-bottom: 8px; }
+  }
+  .卡.家 .藏详 { margin-top: 10px; }
+  .行.右 { justify-content: flex-end; margin-top: 10px; }
+
+  .卡.家 .回执:empty, .备表 .回执:empty { display: none; }
+
+  .提示盒 { margin-top: 6px; padding: 6px 10px; border: 1px dashed var(--边); border-radius: var(--r中); }
+
+  .提示行:not(:has(> :not([hidden]))) { display: none; }
+
+  .备头 { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .备头 .区名 { font-weight: 700; font-size: var(--f1); color: var(--次); cursor: help; }
+  .备表 { min-width: 860px; }
+  .备表 td { padding: 4px 7px; vertical-align: middle; }
+  .备表 td.序 { width: 1%; text-align: center; font-weight: 700; color: var(--次);
+               font-variant-numeric: tabular-nums; cursor: help; }
+  .备表 code { font-size: var(--f1); overflow-wrap: anywhere; }
+  .备表 td:nth-child(n+5), .备表 td.号格 { width: 1%; white-space: nowrap; }
+  .备表 button { font-size: var(--f1); padding: 3px 9px; white-space: nowrap; }
+  .备表 .操作 { display: flex; align-items: center; gap: 6px; }
+  .功能表 .操作 { display: flex; align-items: center; gap: 6px; }
+  .功能表 .操作 button { white-space: nowrap; }
+
+  .剪贴条 { position: fixed; left: 50%; bottom: 16px; transform: translateX(-50%); z-index: 50;
+            display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 32px);
+            padding: 8px 10px 8px 14px; background: var(--蓝浅); color: var(--字);
+            border: 2px solid var(--蓝); border-radius: var(--r中); box-shadow: 0 4px 16px rgba(0,0,0,.18); }
+  .剪贴条[hidden] { display: none; }
+  .剪贴条 .剪贴字 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
+  .剪贴条 .剪贴字::before { content: "⧉ "; }
+  .备表 tr.备行:hover > td { background: var(--面); }
+  .备表 tr.备行.关 > td { opacity: .55; }
+  .备表 tr.备行.开 .箭 { transform: rotate(90deg); }
+
+  .备表 tr.备回:not(:has(.回执:not(:empty), img, .调用-等)) { display: none; }
+  .备表 tr.备回 > td, .备表 tr.备展 > td { padding: 0 8px 8px; }
+  .备表 tr.备展 > td { background: var(--面); }
+  .备表 tr.备展 .卡 { margin: 8px 0 0; }
+
+  a.mini { display: inline-flex; align-items: center; min-height: 30px; }
+  input[type=password], input[type=text] {
+    padding: 5px 10px; border: 1px solid var(--边); border-radius: var(--r中);
+    background: var(--bg); color: var(--字); min-width: 0; flex: 1 1 150px;
+
+    max-width: 640px;
+  }
+  input[type=number] { padding: 5px 8px; border: 1px solid var(--边); border-radius: var(--r中);
+    background: var(--bg); color: var(--字); text-align: center; font-variant-numeric: tabular-nums; }
+
+  select { padding: 5px 24px 5px 8px; border: 1px solid var(--边); border-radius: var(--r中);
+           background: var(--bg); color: var(--字); }
+
+  select.模选 { min-width: 200px; max-width: min(100%, 760px); }
+
+  @media (max-width: 760px) { select.模选 { min-width: 0; flex: 1 1 auto; } }
+  input:focus, select:focus { border-color: var(--蓝); }
+  select option:disabled { color: var(--禁); }
+
+  .mini { border: 1px solid var(--边); background: var(--bg); color: var(--字);
+          border-radius: var(--r中); padding: 5px 12px; font-size: var(--f1); font-weight: 600; cursor: pointer; }
+  .mini:hover:not(:disabled) { border-color: var(--次); background: var(--面); }
+  .主钮 { border: 1.5px solid var(--蓝); background: var(--蓝); color: var(--反字);
+          border-radius: var(--r中); padding: 6px 20px; font-size: var(--f3); font-weight: 700; cursor: pointer; }
+  .主钮:hover:not(:disabled) { background: var(--蓝深); border-color: var(--蓝深); }
+
+  .mini.红边 { border: 1.5px solid var(--红); color: var(--红); font-weight: 700; }
+  .mini.红边:hover:not(:disabled) { background: var(--红浅); border-color: var(--红); }
+  button:disabled, button[disabled], button[aria-disabled="true"] {
+    border: 1.5px dashed var(--边); background: var(--面);
+    color: var(--禁); cursor: not-allowed; }
+  button:disabled:hover, button[aria-disabled="true"]:hover { background: var(--面); border-color: var(--边); }
+  select:disabled, input:disabled { background: var(--面); color: var(--禁);
+    border-style: dashed; cursor: not-allowed; }
+  .蓝 { color: var(--蓝); }
+  .红 { color: var(--红); }
+  .琥 { color: var(--琥); }
+  .青 { color: var(--青); }
+  .态 { font-size: var(--f1); white-space: nowrap; }
+  .态.淡 { color: var(--次); }
+  .连 .近况 { font-size: var(--f1); color: var(--次); white-space: nowrap; }
+  .连 .近况.红 { color: var(--红); font-weight: 600; }
+  .回执 { font-size: var(--f1); min-height: 17px; margin-top: 5px; word-break: break-word; }
+
+  .册行 { display: flex; align-items: center; gap: 8px; padding: 7px 4px;
+          border-bottom: 1px solid var(--线); }
+  .册行:last-child { border-bottom: 0; }
+  .册名 { font-weight: 700; white-space: nowrap; }
+  .册注 { color: var(--次); font-size: var(--f1); flex: 1 1 0; min-width: 0;
+          overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  .标 { font-size: var(--f0); font-weight: 700; border-radius: var(--r圆); padding: 1px 8px;
+        white-space: nowrap; border: 1px solid; }
+  .标.免 { color: var(--青); background: var(--青浅); border-color: var(--青边); }
+  .标.充 { color: var(--琥); background: var(--琥浅); border-color: var(--琥); }
+
+  @media (max-width: 560px) {
+    .册行 { flex-wrap: wrap; }
+    .册注 { flex-basis: 100%; white-space: normal; }
+  }
+
+  .预行 { font-size: var(--f1); color: var(--次); margin-top: 4px; word-break: break-all;
+           flex-basis: 100%; }
+
+  .填格 { flex: 1 1 100%; }
+
+  .对:has(> .错行) { flex-wrap: wrap; }
+  .对 > .错行 { flex-basis: 100%; }
+
+  .填格 > input { flex: 1 1 auto; }
+  .预行 .预 { font-family: var(--等宽); color: var(--字); }
+
+  .锁格 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; width: 100%; }
+  .锁值 { flex: 1 1 200px; min-width: 0; font-size: var(--f1); font-family: var(--等宽);
+          color: var(--弱); background: var(--面2); border: 1px solid var(--线);
+          border-radius: var(--r中); padding: 5px 10px; word-break: break-all; }
+
+  a.领key { display: inline-flex; align-items: center; min-height: 44px;
+            font-size: var(--f1); color: var(--蓝深); }
+  .领key格 { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%; }
+
+  details.领key折 { padding: 0 var(--s3); width: 100%; box-sizing: border-box; }
+  details.领key折 > summary { min-height: 44px; display: flex; align-items: center; justify-content: flex-start;
+                              gap: 6px; cursor: pointer; font-size: var(--f1); color: var(--蓝深); }
+  details.领key折 .箭 { margin-left: 0; }
+  ol.领key步, ul.领key步 { margin: 0 0 var(--s2); padding-left: 1.6em; font-size: var(--f1); line-height: 1.7; }
+  .介绍头 { font-size: var(--f1); line-height: 1.7; padding-top: 4px; }
+
+  .介绍头, ul.领key步 li { white-space: normal; overflow-wrap: anywhere; }
+
+  .滚 { overflow-x: auto; border: 1px solid var(--线); border-radius: var(--r中); }
+  table { width: 100%; min-width: 340px; border-collapse: collapse; font-size: var(--f2);
+          background: var(--bg); }
+  th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid var(--线); }
+  tr:last-child td { border-bottom: 0; }
+  th { color: var(--次); font-weight: 600; background: var(--面); font-size: var(--f1); }
+  td.错 { cursor: help; }
+  .空 { color: var(--弱); font-size: var(--f1); padding: 10px 2px; }
+
+  .出图 { display: block; max-width: 240px; width: 100%; height: auto; margin-top: 6px;
+          border: 1px solid var(--边); border-radius: var(--r中); }
+  .时 { font-family: var(--等宽); white-space: nowrap; width: 1%; }
+  td:nth-child(2), td:nth-child(3) { word-break: keep-all; }
+  @media (pointer:coarse) {
+    input:where(:not([type=checkbox]):not([type=radio])), select, button, button.主钮, button.mini, a.mini, a.领key, summary,
+    .主表 tr.主行, .备表 tr.备行 { min-height: 44px; }
+    a.mini, a.领key, summary { display: inline-flex; align-items: center; }
+    .主表 tr.主行 > td, .备表 tr.备行 > td { height: 44px; }
+  }
+
+  .调用记录条 { align-items: center; }
+  .调用记录条 > .表名 { margin-right: auto; padding: 0; }
+  .调用记录条 label { display: inline-flex; align-items: center; gap: var(--s1); max-width: 100%; }
+
+  .调用记录条 select { min-width: 0; flex: 1 1 auto; max-width: 100%; text-overflow: ellipsis; }
+  .调用记录错 { border: 2px solid var(--红); border-radius: var(--r中); padding: var(--s3); }
+  .调用记录错 .表条 { padding: var(--s2) 0 0; border: 0; }
+
+  .日志表 { table-layout: fixed; }
+  .日志表 tr:first-child > th:nth-child(1) { width: 76px; }
+  .日志表 tr:first-child > th:nth-child(2) { width: 150px; }
+  .日志表 tr:first-child > th:nth-child(3) { width: 280px; }
+  .日志表 tr:first-child > th:nth-child(5) { width: 200px; }
+  .日志表 td { overflow-wrap: anywhere; }
+  .设格 .锁格 { max-width: 720px; }
+
+  .统计排 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;
+            margin: 0 0 12px; }
+  .统计格 { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 12px;
+            border: 1px solid var(--线); border-radius: var(--r大); background: var(--bg); }
+  .统计签 { color: var(--次); font-size: var(--f2); }
+  .统计数 { font-size: var(--f6); font-weight: 700; line-height: 1.2;
+            font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+  .统计格.提 { border: 1.5px dashed var(--琥); background: var(--琥浅); }
+  .统计格.提 .统计数 { color: var(--琥); }
+  @media (max-width: 560px) { .统计排 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+  .更新筛选, .更新回执 { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; margin: var(--s3) 0; }
+  .更新筛选 [aria-pressed="true"] { border: 2px solid var(--蓝); color: var(--蓝); font-weight: 600; }
+  .更新回执.错误 { border: 2px solid var(--红); padding: var(--s2); color: var(--红); }
+  .更新表 td, .供应商功能表 td { overflow-wrap: anywhere; vertical-align: middle; }
+  .更新表 select, .供应商功能表 select { width: 100%; min-height: 32px; font-size: var(--f2); }
+  .更新表 .备选功能 { padding-left: var(--s5); }
+  .备选标签 { margin-right: var(--s2); }
+  .更新块 .状态.灰 { color: var(--次); }
+  .更新块 .状态.新版 { color: var(--蓝); }
+  .更新块 .状态.警告 { color: var(--琥); border-bottom: 1px dashed currentColor; }
+  .更新块 .状态.错误 { color: var(--红); }
+  .更新块 dialog, .按家块 dialog { color: var(--字); background: var(--bg); border: 1px solid var(--边);
+    border-radius: var(--r大); max-width: min(640px, 92vw); max-height: 84vh; overflow: auto; }
+  .更新块 dialog table { border-collapse: collapse; width: 100%; }
+  .更新块 dialog td, .更新块 dialog th { text-align: left; padding: var(--s3); border-bottom: 1px solid var(--线); }
+  .更新块 dialog button, .按家块 dialog button { margin-top: var(--s3); margin-right: var(--s3); }
+  .按家块 .表名 select { width: auto; max-width: 320px; }
+  .按家块 dialog label { display: block; margin: var(--s3) 0 var(--s1); font-weight: 600; }
+  .按家块 dialog select { width: 100%; min-height: 36px; }
+  .按家块 .位选 { display: flex; gap: var(--s4); flex-wrap: wrap; }
+  .按家块 .位选 label { font-weight: 400; display: flex; align-items: center; gap: var(--s1); min-height: 44px; margin: 0; }
+  .按家块 .换掉提醒 { border: 1.5px dashed var(--琥); background: var(--琥浅); color: var(--字);
+    padding: var(--s2) var(--s3); border-radius: var(--r中); margin-top: var(--s3); }
+  .按家块 .开关 { min-width: 64px; }
+  @media (pointer: coarse) { .更新表 select, .供应商功能表 select, .按家块 .开关 { min-height: 44px; } }
+</style>
+</head>
+<body class="有侧栏">
+<nav id="side" aria-label="设置面板分区">
+  <div class="side-身">
+    <div class="side-组">
+      <button class="side-项 cur" type="button" data-去块="供应商">
+        <span class="side-字">模型供应商</span><span class="side-数" id="侧供应商数">0 家</span>
+      </button>
+    </div>
+    <div class="side-组">
+      <button class="side-项" type="button" data-去块="模型更新" title="GPT 这类带版本号的模型出了新版,勾上就换;推理强度也在这儿改。已是最新的去「按供应商看功能」">
+        <span class="side-字">GPT 模型更新</span><span class="side-数" id="侧更新数">0 条新版</span>
+      </button>
+    </div>
+    <div class="side-组">
+      <button class="side-项" type="button" data-去块="按供应商" title="挑一家供应商,看哪些功能在用它;也能在这儿给功能添加这一家的模型">
+        <span class="side-字">按供应商看功能</span><span class="side-数" id="侧按家数">0 家在用</span>
+      </button>
+    </div>
+    <div class="side-组">
+      <button class="side-项" type="button" data-去块="功能">
+        <span class="side-字">功能</span><span class="side-数" id="侧功能数">0 条</span>
+      </button>
+      <div class="side-锚组" id="项目锚"></div>
+    </div>
+    <div class="side-组">
+      <button class="side-项" type="button" data-去块="日志">
+        <span class="side-字">调用记录</span><span class="side-数" id="侧日志数">0 条</span>
+      </button>
+    </div>
+  </div>
+</nav>
+<div class="wrap">
+
+<div class="页头行">
+  <button class="hd-汉堡" id="汉堡" type="button" aria-label="展开左边那条" aria-expanded="false"
+          aria-controls="side" title="打开左边的分区菜单:模型供应商 / 功能 / 调用记录">☰</button>
+  <h1>AI接入底座 · 设置</h1>
+</div>
+<p class="说明" title="这张表记着「哪个功能用哪个模型」。各个软件只报功能名,不碰模型;在这儿改完,它们下一次调用就换过来了,不用重启、不用改代码。">改完立刻生效,不用重启</p>
+
+<div id="配置报错位" role="alert"></div>
+<div id="统计"></div>
+<div id="开场"></div>
+
+<section class="块" data-块="供应商">
+  <h2 class="块题">模型供应商</h2>
+  <div id="供应商开场"></div>
+  <div id="供应商"></div>
+</section>
+
+<section class="块" data-块="模型更新" hidden>
+  <div id="模型更新页" class="更新块" aria-live="polite">正在载入…</div>
+</section>
+
+<section class="块" data-块="按供应商" hidden>
+  <div id="按供应商页"></div>
+</section>
+
+<section class="块" data-块="功能" hidden>
+  <h2 class="块题">功能</h2>
+  <div id="功能"></div>
+</section>
+
+<section class="块" data-块="日志" hidden>
+  <h2 class="块题">调用记录</h2>
+  <div id="日志"></div>
+</section>
+
+</div>
+
+<script src="页眉侧栏.js"></script>
+<script src="菜单.js"></script>
+<script>
+function el(标签, 属性, ...孩子) {
+  const n = document.createElement(标签);
+  for (const [k, v] of Object.entries(属性 || {})) {
+    if (k === "文")
+      n.textContent = v;
+    else if (k === "类")
+      n.className = v;
+    else if (k.startsWith("on"))
+      n.addEventListener(k.slice(2), v);
+    else if (v !== null && v !== undefined && v !== false)
+      n.setAttribute(k, v);
+  }
+  for (const c of 孩子)
+    if (c)
+      n.appendChild(c);
+  return n;
+}
+function 现在() {
+  const d = new Date;
+  return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+}
+function 报(格, 成, 话) {
+  格.textContent = "";
+  const 符 = document.createElement("i");
+  符.className = "符 " + (成 ? "好" : "坏");
+  符.textContent = 成 ? "✓" : "✗";
+  格.append(符, " " + 话 + (成 ? "  " + 现在() : ""));
+  格.className = "回执";
+}
+function 问改(题, 说, 钮字 = "改") {
+  return UI确认({ 题, 说, 钮字, 危: false });
+}
+function 必标(字) {
+  return el("label", {}, el("span", { 文: 字 }), el("abbr", { 类: "必", title: "必填", 文: "*" }));
+}
+function 够多就搜(选) {
+  if (选.UI搜选) {
+    选.UI搜选.刷新();
+    return;
+  }
+  if (选.parentNode && 选.options.length > 15)
+    UI搜选(选, { 占位: "快搜 模型名…" });
+}
+够多就搜.挂 = (壳, 选) => {
+  够多就搜(选);
+  return 壳;
+};
+function 设定字(家, 模型, 劲) {
+  return (家 || "?") + " / " + (模型 || "?") + (劲 && 劲 !== 关档 ? " · " + 劲 : "");
+}
+const 列宽们 = new Map;
+function 接列宽(表, 键) {
+  const 宽 = UI列宽(表, { 键 });
+  列宽们.set(键, (列宽们.get(键) || []).filter(([t]) => t.isConnected).concat([[表, 宽]]));
+  return 宽;
+}
+function 恢复宽钮(键们, 悬浮) {
+  const 钮 = el("button", {
+    类: "mini",
+    type: "button",
+    文: "恢复默认列宽",
+    title: "表头右边缘能拖宽拖窄,这台电脑记着。" + 悬浮
+  });
+  钮.addEventListener("click", (e) => {
+    e.stopPropagation();
+    键们.forEach((k) => (列宽们.get(k) || []).forEach(([, 宽]) => 宽.恢复()));
+    UI提示("已恢复默认列宽");
+  });
+  return 钮;
+}
+async function 打(地址, 数据) {
+  const r = await fetch(地址, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(数据)
+  });
+  const 数 = await r.json();
+  if (!r.ok && 数.错误号)
+    画配置报错(数, new Error(数.错), 装);
+  return 数;
+}
+let 状态 = { 供应商: [], 功能: [], 项目: {}, 日志: [], 名册: [], 地址尾巴们: [] };
+let 配置请求序号 = 0, 日志请求序号 = 0;
+async function 装() {
+  const 序号 = ++配置请求序号;
+  ++日志请求序号;
+  const 新状态 = await 取面板配置(() => 序号 === 配置请求序号, 装);
+  if (!新状态 || 序号 !== 配置请求序号)
+    return;
+  状态 = 新状态;
+  画统计();
+  画开场();
+  画供应商();
+  画功能();
+  画日志();
+  画侧栏();
+  按地址切块(false);
+  记横位();
+}
+let 环境卡 = null;
+function 环境IP卡() {
+  if (环境卡)
+    return 环境卡;
+  const 值 = el("span", { 类: "态" });
+  const 话 = el("div", { 类: "回执" });
+  const 钮 = el("button", {
+    类: "mini",
+    title: "点一下才去问,平时不发这个请求。问的是一个公开网址,它只回「你从哪个 IP 来的、" + "这个 IP 在哪个国家哪个城市」,不带你的密钥、不带账号、也不带你在这台电脑上干过什么。",
+    文: "查一下现在从哪个 IP 出去"
+  });
+  钮.addEventListener("click", async () => {
+    钮.disabled = true;
+    值.textContent = "问着…";
+    值.className = "态";
+    话.textContent = "";
+    话.className = "回执";
+    try {
+      const r = await 打("/api/egress", {});
+      if (!r.现在) {
+        值.textContent = "没问出来";
+        值.className = "态 红";
+        报(话, false, "探不到 IP,多半是这台电脑没有外网,或者几个探针都被挡了。");
+        return;
+      }
+      值.textContent = r.现在;
+      值.className = "态 蓝";
+      if (r.地) {
+        话.appendChild(el("div", {
+          title: "这是那个公开网址按 IP 段查出来的位置,一般准到城市,偶尔会偏到隔壁省 —— " + "拿它判「我这会儿是从国内还是国外出去的、跟平时是不是同一个地方」够用," + "别拿它当精确定位。" + (r.运营商 ? "这段 IP 归「" + r.运营商 + "」这家网络运营商。" : ""),
+          文: "落在 " + r.地
+        }));
+      }
+      const 短 = r.变了 ? "跟上次不一样(上次 " + r.上次 + "),核对一下" : "拿浏览器开同一个网址,IP 要一样";
+      话.appendChild(el("div", {
+        类: r.变了 ? "红" : "",
+        title: "核对办法:在这台电脑的浏览器里打开 https://api.ipify.org ,看到的 IP 跟上面这个一样才算稳妥," + "那说明这个软件和你平时登录账号走的是同一条网络。两边对不上,等于同一个账号一边在家、一边在机房," + "服务商那边看着就是异常。用订阅账号中转这件事本身就有账号被限制的风险,自己权衡后再用。",
+        文: 短
+      }));
+    } catch (err) {
+      值.textContent = "没问出来";
+      值.className = "态 红";
+      console.error(err);
+      报(话, false, "出口地址未取到 —— 过一会儿再试");
+    } finally {
+      钮.disabled = false;
+    }
+  });
+  环境卡 = el("div", { 类: "卡 素 独 开场" });
+  环境卡.appendChild(el("div", { 类: "卡头" }, el("span", {
+    类: "名",
+    title: "这台电脑发请求出去时,对方网站看到的 IP(技术上常叫「出口 IP」)。用订阅账号那几家" + "(反代、本机命令)尤其要看:这个 IP 跟你平时开浏览器登录那个账号的 IP 不一样," + "等于同一个账号一边在家、一边在机房,容易被判成异常。",
+    文: "环境 IP"
+  })));
+  环境卡.appendChild(el("div", { 类: "行" }, 钮, 值));
+  环境卡.appendChild(话);
+  return 环境卡;
+}
+function 是本机转发(s) {
+  return !!(s && s.要密钥) && /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\]|0\.0\.0\.0)([:/]|$)/i.test(s.地址 || "");
+}
+const 别选 = [{
+  家: 是本机转发,
+  模型: /^claude[-.]/i,
+  牌: "⛔ 别在这儿选",
+  话: "claude 的模型要走本机 claude 命令行那一家(类型「命令行」)—— 它调的是这台电脑上的 claude -p 命令。" + "这一家是本机的转发程序,在它下面选 claude 等于绕开官方客户端。",
+  出路: "想用 claude:到下面功能卡上,把那条功能的「模型供应商」换成类型「命令行」、程序 claude 的那一家," + "它的模型清单里就是 claude。"
+}];
+function 查别选(家, 模型名) {
+  for (const 条 of 别选)
+    if (条.家(家) && 条.模型.test(模型名))
+      return 条;
+  return null;
+}
+function 选不了(家, 模型名, 记) {
+  const 忌 = 查别选(家, 模型名);
+  if (忌)
+    return { 由: "规矩", 牌: 忌.牌, 话: 忌.话, 出路: 忌.出路 || "" };
+  if (记 && 记.藏了)
+    return {
+      由: "隐藏",
+      牌: "⛔ " + 摁的短牌(记.备注),
+      话: "选不了。当初记下的理由:" + (记.备注 || "(没记原因)") + "(" + (记.何时 || "") + " 记的)。",
+      出路: "想让它重新能选:上面「模型清单」那一行,点开右边那颗「全部 …个」," + "在里头找到它点「取消隐藏」。"
+    };
+  return null;
+}
+function 跳(块名, 项目 = "") {
+  切块(块名, 项目);
+}
+function 安装功能们(已装 = true) {
+  const 范围 = 状态.安装范围;
+  if (!范围?.已知)
+    return 已装 ? 状态.功能 : [];
+  const 名们 = new Set(范围.功能名);
+  return 状态.功能.filter((f) => (名们.has(f.功能名) || 名们.has(f.父功能)) === 已装);
+}
+function 安装功能分组() {
+  const 组 = 分组(安装功能们());
+  const 其他 = 安装功能们(false);
+  if (其他.length) {
+    const 口们 = new Map;
+    for (const 子组 of 分组(其他).values())
+      for (const [名, 行] of 子组)
+        口们.set(名, 行);
+    组.set("其他功能", 口们);
+  }
+  return 组;
+}
+function 三件() {
+  const 成功过 = (状态.汇总?.总调用 ?? 0) - (状态.汇总?.总错误 ?? 0) > 0;
+  const 调用过 = (状态.汇总?.总调用 ?? 0) > 0;
+  const 范围 = 状态.安装范围;
+  if (范围?.已知) {
+    if (范围.声明错误?.length)
+      return [{ 成: false, 话: "声明读取失败，请重启软件", 解: "安装声明未就绪", 钮: "去功能", 去: "功能" }];
+    if (!范围.功能名.length)
+      return [];
+    const 主行 = new Set(范围.功能名);
+    const 功能们 = 安装功能们().filter((f) => 主行.has(f.功能名));
+    const 缺 = 功能们.filter((f) => !f.启用 || f.拨不动理由);
+    return [
+      { 成: !!范围.供应商就绪, 话: 范围.供应商就绪 ? "所需付费接口已就绪" : "所需付费接口待配置", 解: "只计算已装功能需要的文本、看图或生图能力；免费与订阅接口不计入此项。", 钮: "去模型供应商", 去: "供应商" },
+      { 成: 功能们.length === 主行.size && !缺.length, 话: 缺.length || 功能们.length !== 主行.size ? "已装功能待配置或关闭" : "已装功能配置就绪", 解: 缺.map((f) => f.功能名 + "：" + (!f.启用 ? "已关闭，请启用" : f.拨不动理由)).join("；"), 钮: "去功能", 去: "功能" },
+      { 成: !!范围.已成功调用, 话: 范围.已成功调用 ? "已成功调用过已装功能" : 范围.已调用 ? "调用过但没成功" : "已装功能还没调用过", 解: "只计算已装功能及其备选的全部成功记录。失败后到调用记录查看原因。", 钮: 范围.已调用 ? "去调用记录" : "去功能", 去: 范围.已调用 ? "日志" : "功能" }
+    ];
+  }
+  const 能用的 = 状态.供应商.filter((s) => !s.拨不动理由);
+  const 按次付费 = 能用的.filter((s) => !s.吃订阅 && !s.免费);
+  const 启用的 = 状态.功能.filter((f) => f.启用);
+  const 指错的 = 启用的.filter((f) => f.拨不动理由);
+  return [
+    {
+      成: 按次付费.length > 0,
+      话: 按次付费.length > 0 ? 按次付费.length + " 家按次付费的供应商能用" : "还没有按次付费的供应商能用",
+      解: "按次付费的接口 = 你在那家官网充值、拿一串 key 填进来,用多少扣多少," + "这是厂家正常卖的用法,不吃你的订阅账号;厂家自己的限额和用户协议照样算数。出厂带的「DeepSeek」就是这种:到它官网后台复制一串 key," + "填进下面「模型供应商」里它那张卡。**烧订阅额度的那几家不算在这一件里** —— " + "那种是拿买过的订阅当接口用,随时可能被限流甚至封号,不该当主力。" + "一分钱都还不想先花的话:下面那张「Groq」卡不用充值 —— 点卡里「去这里领 key」" + "注册领一串 key 填进去,就能先把整条路跑通、看看这软件在你机器上跑不跑得起来。" + "**但它也不算在这一件里**:免费档的模型名单常变,今天能拨的名字过几天可能就没了," + "拿它当主力迟早在干活干到一半时断掉。所以它只当试用,这一行还是等你配好一家" + "按次付费的才会打勾。",
+      钮: "去模型供应商",
+      去: "供应商"
+    },
+    {
+      成: 启用的.length > 0 && 指错的.length === 0,
+      话: 启用的.length === 0 ? "还没有启用的功能" : 指错的.length > 0 ? 指错的.length + " 个功能指着用不了的供应商" : 启用的.length + " 个功能都指着能用的供应商",
+      解: 指错的.length > 0 ? "这几个现在拨不动:" + 指错的.map((f) => f.功能名).join("、") + "。它们选的那一家密钥没填、或本机没装、或还没点过开启 —— 每张卡上都写着卡在哪一条。" + "到下面「功能」里把它改指给一家能用的,或者先回上面把那一家配好。" + "用不上的功能可以把「启用」的勾去掉,去掉之后就不算在这个数里了。" : "每个启用了的功能都选好了一家现在拨得动的供应商。",
+      钮: "去功能",
+      去: "功能"
+    },
+    {
+      成: 成功过,
+      话: 成功过 ? "已成功调用过" : 调用过 ? "调用过但没成功" : "还没调用过",
+      解: "至少一次成功调用才算完成。失败后到「调用记录」勾选「只看失败」，查看原因并重试；" + "还没调用过时，到「功能」挑一行点「测试」。",
+      钮: 调用过 ? "去调用记录" : "去功能",
+      去: 调用过 ? "日志" : "功能"
+    }
+  ];
+}
+function 步行(号, 件, 是当前) {
+  const 行 = el("div", { 类: "行" });
+  行.appendChild(el("span", { 类: "步号", 文: String(号) }));
+  行.appendChild(el("span", {
+    类: "态 " + (件.成 ? "青" : 是当前 ? "红" : "待"),
+    title: 件.解,
+    文: (件.成 ? "✓ " : 是当前 ? "✗ " : "") + 件.话
+  }));
+  if (是当前) {
+    行.appendChild(el("button", {
+      类: "mini",
+      title: "滚到下面那一块去。有事要办的那几张卡本来就是摊开的。",
+      文: 件.钮,
+      onclick: () => 跳(件.去)
+    }));
+  }
+  return 行;
+}
+function 快速开始卡() {
+  const 件们 = 三件();
+  const 差 = 件们.filter((x) => !x.成).length;
+  if (!差)
+    return null;
+  const 头 = 件们.findIndex((x) => !x.成);
+  const 卡 = el("div", { 类: "卡 提 独 开场" });
+  卡.appendChild(el("div", { 类: "卡头" }, el("span", {
+    类: "名 琥",
+    title: "这一块是给第一次装完的人看的。上面这几件办妥之后它自己就不再出现,不用手动关。" + "哪天配置退回去了(比如密钥被删了)它会自己回来 —— 它是个体检,不是看过就作废的公告。",
+    文: "⚠ 快速开始"
+  }), el("span", { 类: "tag t琥", title: "还有几件没办完。", 文: "还差 " + 差 + " 步" })));
+  件们.forEach((件, i) => 卡.appendChild(步行(i + 1, 件, i === 头)));
+  卡.appendChild(el("div", {
+    类: "态 待",
+    title: "不用找关闭按钮,也没有关闭按钮 —— 上面几行全变成 ✓ 的那一刻,这一块自己就没了。",
+    文: "三项完成后本区自动消失"
+  }));
+  return 卡;
+}
+function 机密违规名() {
+  return new Set((状态.机密违规 || []).map((v) => v.功能名));
+}
+function 机密条() {
+  const 违 = 状态.机密违规 || [];
+  if (!违.length)
+    return null;
+  const 卡 = el("div", { 类: "卡 堵 独 开场" });
+  卡.appendChild(el("div", { 类: "卡头" }, el("span", { 类: "名 红", 文: "敏感内容" })));
+  卡.appendChild(el("div", {
+    类: "态 红",
+    title: "这几族会把敏感内容送给模型,只许用 Claude。下面这些行拨的不是 Claude," + "底座调用时一律跳过、不会把数据发过去;但留着容易误会,建议删掉或改拨 Claude 那一家:" + 违.map((v) => v.功能名 + "(" + v.供应商 + "/" + v.模型 + ")").join("、") + "。",
+    文: "✗ " + 违.length + " 行机密功能拨的不是 Claude"
+  }));
+  卡.appendChild(el("div", { 类: "行" }, el("span", { 类: "态", 文: 违.map((v) => v.功能名).join("、") }), el("button", {
+    类: "mini",
+    title: "滚到下面「功能」那一块去。",
+    文: "去功能",
+    onclick: () => 跳("功能")
+  })));
+  return 卡;
+}
+function 风险条() {
+  const 险 = 状态.功能.filter((f) => f.启用 && (找家(f.主用供应商) || {}).吃订阅);
+  if (!险.length)
+    return null;
+  const 家们 = [...new Set(险.map((f) => f.主用供应商))];
+  const 卡 = el("div", { 类: "卡 提 独 开场" });
+  卡.appendChild(el("div", { 类: "卡头" }, el("span", {
+    类: "名 琥",
+    title: "这一条只要还有功能指着烧订阅的那一家就一直在,办不掉也关不掉 —— " + "它说的不是「你还没设置好」,是「你现在就在担这个风险」。",
+    文: "账号风险"
+  })));
+  卡.appendChild(el("div", {
+    类: "态 琥",
+    title: "走的是这几家:" + 家们.join("、") + "。用到它们的功能:" + 险.map((f) => f.功能名).join("、") + "。" + "这条路是拿你已经买过的订阅额度当接口用,不是服务商设计的用法," + "账号有被限流甚至封号的风险,出了事得你自己担。软件每跑一次这样的功能就烧一次。",
+    文: "⚠ " + 险.length + " 个功能烧的是订阅额度"
+  }));
+  卡.appendChild(el("div", { 类: "行" }, el("span", {
+    类: "态",
+    title: "按次付费的接口 = 在那家官网充值、拿一串 key 来用,用多少扣多少,这是厂家正常卖的用法,不吃你的订阅账号;厂家自己的限额和用户协议照样算数。" + "把主力功能改拨给它,把烧订阅的那几家留给偶尔用一次的活,风险就小得多。" + "非要继续用订阅那条路的话,把风险压低三条:①旁边「环境 IP」查一下," + "要跟你平时开浏览器登录这个账号的 IP 一致 ②那几家卡片里「别调太快」别设得太松 " + "③别拿它跑通宵批量。",
+    文: "建议配一个按次付费的接口当主力"
+  }), el("button", {
+    类: "mini",
+    title: "滚到下面「模型供应商」那一块去。",
+    文: "去模型供应商",
+    onclick: () => 跳("供应商")
+  })));
+  return 卡;
+}
+function 画统计() {
+  const 筐 = document.getElementById("统计");
+  筐.textContent = "";
+  const 汇 = 状态.汇总;
+  if (!汇)
+    return;
+  const 口径 = "一次调用 = 调用记录里一行:首选没通、自己换备选,两趟各算一次;" + "面板上点「测试」也算;被限速或没开启拦下、根本没发出去的不算。";
+  const 今天 = "「今日」从跑面板这台电脑的今天零点算起。";
+  const 格 = (签, 数, 悬浮, 提) => el("div", { 类: "统计格" + (提 ? " 提" : ""), title: 悬浮 }, el("span", { 类: "统计签", 文: 签 }), el("span", { 类: "统计数", 文: (提 ? "⚠ " : "") + UI格式.数(数) }));
+  筐.appendChild(el("div", { 类: "统计排", role: "group", "aria-label": "调用统计" }, 格("今日调用", 汇.今日调用, "今天往外发了多少次,成的败的都算。" + 今天 + 口径), 格("总调用", 汇.总调用, "调用记录里一共多少行,从装上底座起算。" + 口径), 格("今日错误", 汇.今日错误, 汇.今日错误 > 0 ? "今天有 " + 汇.今日错误 + " 次没成。它可能已经自己换备选成了," + "要看是哪条功能、报了什么,去左边「调用记录」。" + 今天 : "今天还没有失败的调用。" + 今天, 汇.今日错误 > 0), 格("总错误", 汇.总错误, "调用记录里一共多少次没成,从装上底座起算。每条报错原文在「调用记录」里。")));
+}
+function 画开场() {
+  const 筐 = document.getElementById("开场");
+  const 供应商开场 = document.getElementById("供应商开场");
+  筐.textContent = "";
+  供应商开场.textContent = "";
+  const 快 = 快速开始卡();
+  if (快)
+    筐.appendChild(快);
+  const 密 = 机密条();
+  if (密)
+    供应商开场.appendChild(密);
+  const 排 = el("div", { 类: "并排" });
+  const 险 = 风险条();
+  if (险)
+    排.appendChild(险);
+  排.appendChild(环境IP卡());
+  供应商开场.appendChild(排);
+}
+let 删家完的话 = null;
+function 供应商详情(s, 转发) {
+  const 详 = el("div", { 类: "供应商详情" });
+  const 删回执 = el("div", { 类: "回执" });
+  const 删家 = el("button", {
+    类: "mini 红边",
+    title: "把这一整家从底座去掉:网址、密钥、模型清单、这一家所有模型的备注,一起没。" + "还有功能拨给它的时候删不动。删掉不能撤销。",
+    文: "删掉这家"
+  });
+  删家.addEventListener("click", async () => {
+    if (!await UI确认({
+      题: "删掉「" + s.名 + "」这一整家?",
+      说: "它的网址、密钥、模型清单,还有这一家每个模型的备注,全都没了,收不回。",
+      钮字: "删除"
+    }))
+      return;
+    删家.disabled = true;
+    try {
+      const 结 = await 打("/api/delprovider", { 供应商: s.名 });
+      if (!结.成了) {
+        报(删回执, false, "有功能在用它,先去「功能」那块改到别家");
+        删回执.title = 结.说 || 结.错 || "";
+        return;
+      }
+      删家完的话 = 结.说;
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(删回执, false, "供应商未删除 —— 刷新后再试");
+    } finally {
+      删家.disabled = false;
+    }
+  });
+  const 格 = el("div", { 类: "设格" });
+  const 行 = (签, 悬浮, 值) => 格.append(el("span", { 类: "签", title: 悬浮, 文: 签 }), el("div", { 类: "值" }, 值));
+  行("介绍", "这一家能干什么、官方给多少额度、数据会不会被拿去训练。名册出厂带一份,此后以本机库为准。", 介绍格(s));
+  行("地址", !s.要密钥 ? "要调的那个命令" : 转发 ? "请求发去这个网址。127.0.0.1 是这台电脑自己。" : "请求发去这个网址", 地址格(s));
+  行("密钥", "在线服务填官网密钥;本机转发填程序自己的密钥;本机命令不用填。", 密钥格(s, 转发));
+  const 步们 = s.领key步骤 || [];
+  if (s.注册页 || 步们.length) {
+    const 领 = el("div", { 类: "领key格" });
+    if (s.注册页)
+      领.append(el("a", {
+        类: "领key",
+        href: s.注册页,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        title: s.注册页,
+        文: "去这里领 key →"
+      }));
+    if (步们.length) {
+      const 列 = el("ol", { 类: "领key步" });
+      步们.forEach((句) => 列.append(el("li", { 文: 句 })));
+      领.append(el("details", { 类: "领key折" }, el("summary", { title: "第一次领 key 照着这几步走。" }, el("span", { 类: "箭", 文: "▸" }), el("span", { 文: "怎么领 · " + 步们.length + " 步" })), 列));
+    }
+    行("领 key", "打开官网领 key,回来粘进密钥格。", 领);
+  }
+  行("订阅额度", "这一家用订阅额度、按次付费还是免费额度。", 计费条(s));
+  行("调用频率上限", "限制调用频率,降低订阅账号被风控的风险。", 限速格(s));
+  行("余额与到期", "这一家还剩多少、哪天到期。余额是最近一次拿到的,到期日要自己填。", 余额格(s));
+  const 模 = 模型行(s);
+  行("模型", "拉取最新模型清单,或展开查看每个模型。", 模.值);
+  详.appendChild(格);
+  if (模.详)
+    详.appendChild(模.详);
+  详.appendChild(el("div", { 类: "行 右" }, 删家));
+  详.appendChild(删回执);
+  return 详;
+}
+function 介绍格(s) {
+  const 行们 = String(s.备注 || "").split(`
+`).map((x) => x.trim()).filter(Boolean);
+  if (!行们.length)
+    return el("span", { 类: "态 淡", 文: "还没写介绍" });
+  const 格 = el("div", { 类: "领key格" }, el("span", { 类: "介绍头", 文: 行们[0] }));
+  if (行们.length > 1) {
+    const 列 = el("ul", { 类: "领key步" });
+    行们.slice(1).forEach((句) => 列.append(el("li", { 文: 句 })));
+    格.append(el("details", { 类: "领key折" }, el("summary", { title: "能力、官方限额、数据会不会被拿去训练、其他风险,每条带官网出处。" }, el("span", { 类: "箭", 文: "▸" }), el("span", { 文: "能力 · 限额 · 数据 · 风险" })), 列));
+  }
+  return 格;
+}
+function 画供应商() {
+  const 筐 = document.getElementById("供应商");
+  筐.textContent = "";
+  const 加 = 加一家卡();
+  const 区 = el("div", { 类: "表区" });
+  const 动作 = el("span", { 类: "表动作" }, 加.开册, 加.开填, 恢复宽钮(["aibase-供应商表"], "点这颗把下面这张供应商表的列宽放回原样(每家展开里的模型表另有一颗)。"));
+  区.appendChild(el("div", { 类: "表名" }, el("strong", { 文: "模型供应商" }), el("span", { 类: "数说", 文: 状态.供应商.length + " 家" }), 动作));
+  const 顶部 = el("div", { 类: "表内展开" });
+  if (删家完的话) {
+    const 顶 = el("div", { 类: "回执" });
+    报(顶, true, 删家完的话);
+    删家完的话 = null;
+    顶部.appendChild(顶);
+    requestAnimationFrame(() => 顶.scrollIntoView({ block: "nearest", inline: "nearest" }));
+  }
+  顶部.appendChild(加.内容);
+  区.appendChild(顶部);
+  if (!状态.供应商.length) {
+    区.appendChild(el("div", { 类: "空", 文: "暂无供应商。" }));
+    筐.appendChild(区);
+    return;
+  }
+  const 表 = el("table", { 类: "主表 供应商表" });
+  表.appendChild(el("colgroup", {}, ...Array.from({ length: 7 }, () => el("col"))));
+  表.appendChild(el("thead", {}, el("tr", {}, el("th", { "data-列": "ID", title: "这家供应商的编号:建的时候程序发的,改名也不变;删掉的号不再发给别家。", 文: "ID" }), el("th", { "data-列": "供应商", 文: "供应商" }), el("th", { "data-列": "接入方式", 文: "接入方式" }), el("th", { "data-列": "今天调用", 文: "今天调用" }), el("th", { "data-列": "模型数", 文: "模型数" }), el("th", { "data-列": "状态", 文: "状态" }), el("th", { "data-列": "展开", "aria-label": "展开", 文: "" }))));
+  const 身 = 表.appendChild(el("tbody"));
+  const 折们 = 读折();
+  for (const s of 状态.供应商) {
+    const 转发 = 是本机转发(s);
+    const 牌名 = !s.要密钥 ? "本机命令" : 转发 ? "本机转发" : "在线服务";
+    const 牌解 = !s.要密钥 ? "调本机已登录的命令,不用填密钥。" : 转发 ? "调这台电脑上的转发程序。" : "走网络 API,要填密钥。";
+    const 态 = 供应商卡状态(s);
+    const 状态格 = el("div", {});
+    供应商状态句(s, 态).forEach((x) => 状态格.appendChild(x));
+    const 键 = "供应商:" + s.名;
+    const 收着 = 折们[键] === undefined ? 态 !== "堵" : !!折们[键];
+    const 主 = el("tr", { 类: "主行" + (收着 ? "" : " 开") }, el("td", { 类: "号格", 文: s.ID || "—" }), el("td", { 文: s.名 }), el("td", { title: 牌解, 文: 牌名 }), el("td", { 类: "数值", title: "从今天零点算起,成功和失败都算。", 文: String(s.今天次数 || 0) }), el("td", { 类: "数值", 文: String(s.模型们.length) }), el("td", {}, 状态格), el("td", {}, el("span", { 类: "箭", 文: "▸" })));
+    const 展 = el("tr", { 类: "展行", hidden: 收着 }, el("td", { colspan: "7" }, el("div", { 类: "展开肉" }, 供应商详情(s, 转发))));
+    主.addEventListener("click", () => {
+      展.hidden = !展.hidden;
+      主.classList.toggle("开", !展.hidden);
+      记折(键, 展.hidden);
+    });
+    身.append(主, 展);
+  }
+  区.appendChild(el("div", { 类: "表框外" }, el("div", { 类: "表框" }, 表)));
+  筐.appendChild(区);
+  接列宽(表, "aibase-供应商表");
+}
+function 计费条(s) {
+  const 勾 = el("input", { type: "checkbox" });
+  勾.checked = !!s.吃订阅;
+  勾.title = "这一格记的是**事实**,不是开关:勾着 = 这一家烧的是你账号里已经买过的额度(订阅)," + "不是按次付费的接口。要不要真的用它,看下面那一行。" + "只有加错了家、标错了的时候才来改这一格。";
+  const 回执 = el("div", { 类: "回执" });
+  勾.addEventListener("change", async () => {
+    if (!勾.checked && !await UI确认({
+      题: "取消「这一家烧的是订阅额度」这个勾?",
+      说: `取消这个勾不会让风险变小 —— 这一家还是在烧你账号的订阅额度。
+` + "取消之后,底座就不再拦「还没开启就调它」这件事了," + `下面那颗「我知道有账号风险,开启」也会一起消失。
+` + "只有这一家其实不烧订阅、是当初标错了,才该取消。",
+      钮字: "取消这个勾",
+      取消字: "留着勾"
+    })) {
+      勾.checked = true;
+      return;
+    }
+    勾.disabled = true;
+    try {
+      const 结 = await 打("/api/subscription", { 供应商: s.名, 吃订阅: 勾.checked });
+      报(回执, 结.成了, 结.成了 ? "存好了" : 结.说 || 结.错 || "订阅额度开关未保存");
+      if (结.成了)
+        await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "订阅额度开关未保存 —— 过一会儿再试");
+      勾.checked = !勾.checked;
+    } finally {
+      勾.disabled = false;
+    }
+  });
+  const 勾对 = el("label", { 类: "对", title: "这一格答的是「这一家烧的是哪种钱」,不是问你同不同意。" + "加新的一家时底座会替你猜一次,猜错了才来改这一格。" + "要不要真的用这一家,看同一行右边那颗钮。" }, 勾, el("span", { 文: "这一家烧的是订阅额度" }));
+  if (s.吃订阅) {
+    const 意 = 同意行(s);
+    return el("div", {}, el("div", { 类: "行" }, 勾对, 意.态, 意.钮), 回执, 意.回执);
+  }
+  const 话 = s.免费 ? el("span", {
+    类: "态",
+    title: "这一家的额度不要钱,也不烧你自己买过的订阅额度,账号不会因为它被限制 —— " + "所以拿来「先试试这软件在我机器上跑不跑得起来」正合适,不用先充值。" + "代价是它不稳:免费档的模型名单常变,今天能拨的名字过几天可能就没了," + "拨不动就在模型清单里换下一个试。正经活别长期押在它身上 —— " + "顶上那块引导的第 1 件也因此不认它,跑通之后还是配一家按次付费的当主力。",
+    文: "免费额度,拿来先试通正合适"
+  }) : el("span", {
+    类: "态",
+    title: "这一家是按次付费的正规接口:你在它官网充值、拿一串 key 填进来,用多少扣多少," + "这是厂家正常卖的用法,不吃你的订阅账号;厂家自己的限额和用户协议照样算数。",
+    文: "按次付费,不吃订阅账号"
+  });
+  return el("div", {}, el("div", { 类: "行" }, 勾对, 话), 回执);
+}
+function 同意行(s) {
+  const 开着 = !!s.已同意;
+  const 回执 = el("div", { 类: "回执" });
+  const 钮 = el("button", {
+    类: 开着 ? "mini" : "mini 红边",
+    title: 开着 ? "关掉之后,任何软件再拨这一家都会被底座当场拦下,不会真发出去。想再用随时开回来。" : "点了就等于你知道:这一家烧的是你自己账号里买过的订阅额度,不是服务商设计的用法," + "账号有被限流甚至封号的风险,出了事得你自己担。开了之后底座才会真往这一家发请求。",
+    文: 开着 ? "关闭" : "我知道有账号风险,开启"
+  });
+  钮.addEventListener("click", async () => {
+    钮.disabled = true;
+    try {
+      const 结 = await 打("/api/consent", { 供应商: s.名, 开: !开着 });
+      报(回执, 结.成了, 结.说 || 结.错 || "");
+      if (结.成了)
+        await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "账号风险开关未保存 —— 过一会儿再试");
+    } finally {
+      钮.disabled = false;
+    }
+  });
+  const 态 = el("span", {
+    类: "态 " + (开着 ? "蓝" : "红"),
+    title: 开着 ? "你在 " + s.已同意 + " 点过同意,所以这一家现在拨得动。" : "还没点过同意,所以任何软件现在调这一家都会被底座拦下 —— 不会真发出去," + "也不会烧掉你的额度。点右边那颗钮才开。",
+    文: 开着 ? "✓ 已开启" : "✗ 还没开启,现在拨不动"
+  });
+  return { 态, 钮, 回执 };
+}
+function 供应商状态句(s, 态) {
+  const 句 = [];
+  if (态 === "堵")
+    句.push(el("span", {
+      类: "态 红",
+      title: "这一家现在拨不动:" + s.拨不动理由 + "。点开这张卡,照里头那一行办(填密钥 / 点开启 / 把命令装上)。",
+      文: "✗ " + 短话(s.拨不动理由, 20)
+    }));
+  if (s.吃订阅)
+    句.push(el("span", {
+      类: "态 琥",
+      title: "这条路是拿你已经买过的订阅额度当接口用,不是服务商设计的用法,账号有被限流或被封的风险。" + "想把风险压到最低:①页面最上面「环境 IP」那一块查一下,要跟你平时开浏览器登录这个账号的 IP 一致;" + "②这张卡里「调用频率上限」别调得太松,人手点几下和每秒几十个请求,差别一眼就看得出来;" + "③别拿它跑通宵批量。要完全没有这个风险,就改用按次付费的接口(比如 DeepSeek、Gemini 官方 key)。",
+      文: "⚠ 烧订阅额度"
+    }));
+  if (态 === "成")
+    句.push(el("span", {
+      类: "态 青",
+      title: "该填的填了、该开的开了,软件现在调这一家发得出去。某个模型通不通,看点开之后模型表里「连通」那一格。",
+      文: "✓ 拨得动"
+    }));
+  return 句;
+}
+function 地址格(s) {
+  const 值 = el("div", {
+    类: "锁值",
+    文: s.地址,
+    title: "现在这一家的请求发去这儿。这一格多半是加它的时候从出厂名册抄进来的。"
+  });
+  const 改 = el("button", { 类: "mini", title: "把这一格解开来改。改的是你自己配置库里的这一行," + "出厂名册一个字都不会动;密钥和模型清单也都不动。", 文: "改" });
+  const 回执 = el("div", { 类: "回执" });
+  const 框 = el("div", { 类: "锁格" }, 值, 改);
+  const 包 = el("div", {}, 框, 回执);
+  改.addEventListener("click", () => {
+    const 输 = el("input", {
+      type: "text",
+      value: s.地址,
+      title: "官网给的那半截就行,底下那行灰字会把真正会发出去的整串显示给你看。"
+    });
+    const 预行 = el("div", { 类: "预行", hidden: true });
+    const 画预览 = () => {
+      const 全 = s.要密钥 ? 拼地址(输.value) : "";
+      if (!全 || 全 === (输.value || "").trim()) {
+        预行.hidden = true;
+        预行.textContent = "";
+        return;
+      }
+      预行.hidden = false;
+      预行.textContent = "";
+      预行.append("实际会发到:", el("span", { 类: "预", 文: 全 }));
+    };
+    输.addEventListener("input", 画预览);
+    const 存 = el("button", { 类: "mini", title: "存进本机的配置库。", 文: "保存" });
+    const 撤 = el("button", { 类: "mini", title: "不改了。", 文: "取消" });
+    撤.addEventListener("click", () => {
+      框.textContent = "";
+      框.append(值, 改);
+      回执.textContent = "";
+      预行.remove();
+    });
+    存.addEventListener("click", async () => {
+      存.disabled = true;
+      try {
+        const 结 = await 打("/api/provider", {
+          名: s.名,
+          类型: s.要密钥 ? "网页接口" : "命令行",
+          地址: s.要密钥 ? 拼地址(输.value) : 输.value
+        });
+        if (!结.成了) {
+          报(回执, false, 结.说 || 结.错 || "没改成");
+          return;
+        }
+        await 装();
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "网址未改成 —— 过一会儿再试");
+      } finally {
+        存.disabled = false;
+      }
+    });
+    框.textContent = "";
+    框.append(输, 存, 撤);
+    包.insertBefore(预行, 回执);
+    输.focus();
+    try {
+      输.setSelectionRange(0, 0);
+    } catch (e) {}
+    输.scrollLeft = 0;
+    画预览();
+  });
+  return 包;
+}
+function 密钥格(s, 转发) {
+  if (!s.本机可用) {
+    return el("span", {
+      类: "态 红",
+      title: "本机没找到「" + s.地址 + "」这个命令,所以这一家现在调不动。" + "两条路:把它装上再刷新这一页;或者在下面「功能」里把用到它的那几行改拨给别家。",
+      文: "✗ 本机没找到这个命令"
+    });
+  }
+  if (!s.要密钥) {
+    return el("span", {
+      类: "态 蓝",
+      title: "本机上找得到这个命令,可以直接用。它用的是自己已经登录好的额度,所以不用填密钥。",
+      文: "✓ 本机装了这个命令,不用填"
+    });
+  }
+  const 态 = el("span", {
+    类: "态 " + (s.有密钥 ? "蓝" : "红"),
+    title: s.有密钥 ? 转发 ? "已经存过一份,平时不用碰它。这串是那个转发程序自己配置文件里写的一行" + "(CPA 反代那家在 config.yaml 的 api-keys 那儿),不是哪个官网发给你的。" + "只有你改了那个文件里那一行,才需要回这儿填一次新的对上。" + "这儿看不到原文 —— 存进去就读不回来了,只报「填没填」。" : "库里已经存了一份。这儿看不到原文 —— 存进去就读不回来了,只报「填没填」。要换就点「换一个」。" : 转发 ? "还没存过,这一家现在拨不动。要填的不是哪个官网的 key,是那个转发程序自己" + "配置文件里写的那一行(CPA 反代那家在 config.yaml 的 api-keys 那儿),照抄过来。" : "还没存过密钥,这一家现在调不动。去这家的官网后台复制一串 key 填进来。",
+    文: s.有密钥 ? "✓ 已填" : "✗ 没填"
+  });
+  const 框 = el("input", {
+    type: "password",
+    placeholder: s.有密钥 ? "填新的那一串" : "把密钥粘在这儿",
+    title: "这个框永远是空的,不会显示你存过的那一串。留空点保存 = 什么都不改。"
+  });
+  const 回执 = el("div", { 类: "回执" });
+  const 钮 = el("button", {
+    类: "主钮",
+    title: "存进本机的配置库。只落在这台电脑上,不会传去别处。",
+    文: "保存"
+  });
+  钮.addEventListener("click", async () => {
+    const 值 = 框.value.trim();
+    if (!UI填错.查([{ 框, 话: "框是空的,没有改动。要换就先填新的" }]))
+      return;
+    if (s.有密钥 && !await UI确认({
+      题: "换掉「" + s.名 + "」存着的那把密钥?",
+      说: `旧的那把会被新的盖掉,这儿读不出原文、盖了就找不回来。
+新的填错了这一家就拨不动,得再换一次。`,
+      钮字: "换",
+      危: true
+    }))
+      return;
+    钮.disabled = true;
+    try {
+      const 结 = await 打("/api/key", { 供应商: s.名, 密钥: 值 });
+      报(回执, 结.成了, 结.说 || 结.错 || "");
+      框.value = "";
+      if (结.成了)
+        await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "密钥未保存 —— 过一会儿再试");
+    } finally {
+      钮.disabled = false;
+    }
+  });
+  const 换 = !s.有密钥 ? null : el("button", {
+    类: "mini",
+    title: "要换一把新的才点。点了出一个空框,填完按保存;不点就什么都不动。",
+    文: "换一个"
+  });
+  if (换) {
+    框.hidden = 钮.hidden = true;
+    换.addEventListener("click", () => {
+      换.hidden = true;
+      框.hidden = 钮.hidden = false;
+      框.focus();
+    });
+  }
+  return el("div", {}, el("div", { 类: "行" }, 态, 换, 框, 钮), 回执);
+}
+function 找家(名) {
+  return 状态.供应商.find((x) => x.名 === 名) || null;
+}
+function 近况(家名, 模型) {
+  const 数 = ((找家(家名) || {}).近7天 || {})[模型];
+  if (!数 || !数.次)
+    return null;
+  return {
+    次: 数.次,
+    成: 数.成,
+    常败: 数.次 >= 5 && 数.成 * 2 < 数.次,
+    话: "近 7 天 " + 数.成 + "/" + 数.次 + " 成"
+  };
+}
+function 供应商卡状态(s) {
+  if (s.拨不动理由)
+    return "堵";
+  if (s.吃订阅)
+    return "提";
+  return "成";
+}
+function 分层(卡, 折叠标识, 默认折) {
+  const 孩 = [...卡.children];
+  if (!孩.length)
+    return;
+  const 冠 = 孩[0];
+  冠.classList.add("冠");
+  const 肉 = el("div", { 类: "肉" });
+  for (const c of 孩.slice(1))
+    肉.appendChild(c);
+  卡.appendChild(肉);
+  if (!折叠标识)
+    return;
+  const 记着 = 读折()[折叠标识];
+  if (记着 === undefined ? !!默认折 : 记着)
+    卡.classList.add("收");
+  冠.appendChild(el("span", { 类: "箭", 文: "▸" }));
+  冠.addEventListener("click", (e) => {
+    if (e.target.closest("button,input,select,a"))
+      return;
+    卡.classList.toggle("收");
+    记折(折叠标识, 卡.classList.contains("收"));
+  });
+}
+const 折叠键 = "aibase_fold_v1";
+const 本次才记 = /^(功能|备选行|提示):/;
+const 本次折 = {};
+function 读折() {
+  let o = {};
+  try {
+    o = JSON.parse(localStorage.getItem(折叠键) || "{}");
+  } catch (e) {}
+  for (const k of Object.keys(o))
+    if (本次才记.test(k))
+      delete o[k];
+  return Object.assign(o, 本次折);
+}
+function 记折(标识, 值) {
+  if (本次才记.test(标识)) {
+    本次折[标识] = 值;
+    return;
+  }
+  try {
+    const o = 读折();
+    for (const k of Object.keys(本次折))
+      delete o[k];
+    o[标识] = 值;
+    localStorage.setItem(折叠键, JSON.stringify(o));
+  } catch (e) {}
+}
+const 接新软件页 = "接新软件";
+function 功能项目们() {
+  return [...安装功能分组().keys()];
+}
+function 功能所在项目(名字) {
+  if (!名字)
+    return "";
+  if (功能项目们().includes(名字) || 名字 === 接新软件页)
+    return 名字;
+  const 功能 = 状态.功能.find((f) => f.功能名 === 名字 || f.父功能 === 名字);
+  if (功能 && 状态.安装范围?.已知 && 安装功能们(false).includes(功能))
+    return "其他功能";
+  return 功能 ? (功能.父功能 || 功能.功能名).split(" · ")[0] : "";
+}
+function 功能落点(项目 = "") {
+  const 项目们 = 功能项目们();
+  const 指定 = 功能所在项目(项目);
+  if (指定)
+    return 指定;
+  const 上次 = 功能所在项目(读折().当前项目 || "");
+  return 上次 || 项目们[0] || 接新软件页;
+}
+function 路由片段(块名, 项目 = "") {
+  return "#" + encodeURIComponent(块名) + (块名 === "功能" ? "/" + encodeURIComponent(项目) : "");
+}
+function 读地址() {
+  const 段 = location.hash.slice(1).split("/");
+  try {
+    return { 块名: decodeURIComponent(段[0] || ""), 项目: decodeURIComponent(段.slice(1).join("/")) };
+  } catch (e) {
+    return { 块名: "", 项目: "" };
+  }
+}
+let 当前块 = "";
+function 切块(块名, 项目 = "", 要滚 = true, 写地址 = true) {
+  const 有 = [...document.querySelectorAll("section[data-块]")].some((x) => x.dataset.块 === 块名);
+  if (!有)
+    块名 = "供应商";
+  if (块名 === "功能")
+    项目 = 功能落点(项目);
+  document.querySelectorAll("section[data-块]").forEach((x) => {
+    x.hidden = x.dataset.块 !== 块名;
+  });
+  document.querySelectorAll("#side [data-去块]").forEach((x) => {
+    const 当前 = x.dataset.去块 === 块名 && 块名 !== "功能";
+    x.classList.toggle("cur", 当前);
+    if (当前)
+      x.setAttribute("aria-current", "page");
+    else
+      x.removeAttribute("aria-current");
+  });
+  const 锚组 = document.getElementById("项目锚");
+  if (锚组)
+    锚组.hidden = 块名 !== "功能";
+  document.querySelectorAll("#项目锚 [data-项目]").forEach((x) => {
+    const 当前 = 块名 === "功能" && x.dataset.项目 === 项目;
+    x.classList.toggle("cur", 当前);
+    if (当前)
+      x.setAttribute("aria-current", "page");
+    else
+      x.removeAttribute("aria-current");
+  });
+  document.querySelectorAll("#功能 > [data-项目]").forEach((x) => {
+    x.hidden = 块名 !== "功能" || x.dataset.项目 !== 项目;
+  });
+  记折("当前块", 块名);
+  if (块名 === "功能")
+    记折("当前项目", 项目);
+  if (块名 === "模型更新" && window.模型更新页 && 当前块 !== "模型更新")
+    window.模型更新页.载入();
+  if (块名 === "按供应商" && window.按供应商页)
+    window.按供应商页.画(状态);
+  当前块 = 块名;
+  const 地址 = 路由片段(块名, 项目);
+  if (写地址 && location.hash !== 地址)
+    location.hash = 地址.slice(1);
+  if (!要滚)
+    return;
+  const 到 = 项目 ? document.querySelector('#功能 > [data-项目="' + CSS.escape(项目) + '"]') : document.querySelector('section[data-块="' + 块名 + '"]');
+  if (到)
+    到.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function 按地址切块(要滚 = true) {
+  const 地址 = 读地址();
+  const 块们 = ["供应商", "模型更新", "按供应商", "功能", "日志"];
+  const 兜底 = 块们.includes(读折().当前块) ? 读折().当前块 : "供应商";
+  const 块名 = 块们.includes(地址.块名) ? 地址.块名 : 兜底;
+  切块(块名, 地址.项目, 要滚, false);
+  const 项目 = 块名 === "功能" ? 功能落点(地址.项目) : "";
+  const 正址 = 路由片段(块名, 项目);
+  if (location.hash !== 正址)
+    history.replaceState(null, "", 正址);
+}
+function 画侧栏() {
+  document.getElementById("侧供应商数").textContent = 状态.供应商.length + " 家";
+  document.getElementById("侧功能数").textContent = 状态.功能.length + " 条";
+  document.getElementById("侧日志数").textContent = (状态.日志总数 ?? 状态.日志.length) + " 条";
+  document.getElementById("侧更新数").textContent = ((状态.模型更新 || {}).更新 || []).length + " 条新版";
+  document.getElementById("侧按家数").textContent = new Set(状态.功能.map((f) => f.主用供应商).filter(Boolean)).size + " 家在用";
+  const 锚组 = document.getElementById("项目锚");
+  锚组.textContent = "";
+  const 项目们 = [...功能项目们(), 接新软件页];
+  for (const 项目 of 项目们) {
+    const 字 = 项目 === 接新软件页 ? "＋ 接新软件" : 项目;
+    const 钮 = el("button", { 类: "side-项 side-锚", type: "button", "data-项目": 项目, 文: 字 });
+    钮.addEventListener("click", () => 切块("功能", 项目));
+    锚组.appendChild(钮);
+  }
+}
+document.querySelectorAll("#side [data-去块]").forEach((钮) => {
+  钮.addEventListener("click", () => 切块(钮.dataset.去块));
+});
+(() => {
+  const 钮 = document.getElementById("汉堡");
+  const 幕 = el("div", { 类: "side-幕" });
+  document.body.appendChild(幕);
+  const 开 = (开着) => {
+    document.body.classList.toggle("侧栏滑出", 开着);
+    钮.setAttribute("aria-expanded", 开着 ? "true" : "false");
+    const 头 = document.querySelector("#side .side-项");
+    if (开着) {
+      if (头)
+        头.focus();
+    } else
+      钮.focus();
+  };
+  钮.addEventListener("click", () => 开(!document.body.classList.contains("侧栏滑出")));
+  幕.addEventListener("click", () => 开(false));
+  addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && document.body.classList.contains("侧栏滑出"))
+      开(false);
+  });
+  document.getElementById("side").addEventListener("click", (e) => {
+    if (e.target.closest(".side-项") && document.body.classList.contains("侧栏滑出"))
+      开(false);
+  });
+})();
+window.addEventListener("hashchange", () => 按地址切块());
+window.addEventListener("底座改了", () => 装());
+let 问完的话 = null;
+const 探档位块 = new Map;
+function 模型表(s) {
+  const 笔 = new Map((s.模型笔记 || []).map((x) => [x.模型, x]));
+  const 全 = (s.模型们 || []).slice();
+  for (const m of 笔.keys())
+    if (!全.includes(m))
+      全.push(m);
+  if (!全.length)
+    return null;
+  const 标识 = "模型表:" + s.名;
+  const 收着 = 读折()[标识] === true;
+  const 详 = el("div", { 类: "藏详", hidden: 收着 || undefined });
+  const 回执 = el("div", { 类: "回执" });
+  详.appendChild(el("div", {
+    类: "模区",
+    title: "「测试」= 真给这个模型发一句最短的问话,烧这家额度、要等几秒,结果记在「连通」那一格;" + "顺带递一张纯色小图问颜色(颜色每次随机),答对了模型名后头标 \uD83D\uDC41,用了几秒记在「速度」。" + "「\uD83D\uDC41」= 能看图:点「测试」答对了颜色,或者这一家的模型清单自己写着收图。" + "「探档位」= 问它认哪几档推理强度(发一个写错的值,接口自己会把合法档列出来)," + "一次请求、几乎不花额度,结果记在「推理强度」那一格。" + "「隐藏」= 让它在下拉框里变灰选不了,行还留着、备注判断都留着,点「取消隐藏」随时回来。",
+    文: "测试 = 真发一次;探档位 = 问它认哪几档;隐藏 = 灰掉不删;\uD83D\uDC41 = 能看图"
+  }));
+  详.appendChild(el("div", { 类: "行" }, 恢复宽钮(["aibase-模表"], "点这颗把各家模型表的列宽放回原样(各家的模型表列一样,共用一份宽)。")));
+  详.appendChild(回执);
+  const 走 = async (钮, 地址, 数据, 忙话) => {
+    钮.disabled = true;
+    if (忙话)
+      钮.textContent = 忙话;
+    try {
+      const 结 = await 打(地址, 数据);
+      问完的话 = { 谁: s.名, 成: !!结.成了, 话: 结.说 || "没成" };
+    } catch (e) {
+      问完的话 = { 谁: s.名, 成: false, 话: "没成:" + e };
+    }
+    await 装();
+  };
+  const 一行 = (m) => {
+    const 记 = 笔.get(m) || {};
+    const 摁 = !!记.藏了;
+    const 挡 = 选不了(s, m, 记);
+    const 规矩挡 = !!挡 && 挡.由 === "规矩";
+    const 笔值 = { 备注: 记.备注 || "", 判断: 记.判断 || "" };
+    const 笔格 = (格, 空话, 悬浮) => {
+      const 画 = (值) => {
+        td.classList.toggle("未写", !值);
+        td.title = 悬浮 + (值 ? "|现在写着:" + 值 : "");
+        return 值 ? 短话(值, 40) : 空话;
+      };
+      const td = el("td", { 类: "改" });
+      if (格 === "备注")
+        td.dataset.多行 = "";
+      td.dataset.值 = 笔值[格];
+      td.textContent = 画(笔值[格]);
+      td._存 = async (新) => {
+        新 = 新.trim();
+        const 结 = await 打("/api/modelnote", { 供应商: s.名, 模型: m, [格]: 新 });
+        if (!结.成了)
+          throw Object.assign(new Error(结.说 || "没记上"), { 人话: "模型" + 格 + "没记上" });
+        笔值[格] = 新;
+        return 画(新);
+      };
+      return td;
+    };
+    const 判断格 = 笔格("判断", "还没写", "会话写进来的一句:这个模型适合干什么、别拿它干什么。空着 = 还没人判断过," + "不是「它不好」。你自己也能改:指到格子上点右边 ✎,改完点格子外面就存,Esc 放弃。");
+    const 备注格 = 笔格("备注", 摁 ? "没记隐藏原因" : "还没写", "你自己写给自己看的一句,指到格子上点右边 ✎ 改,改完点格子外面就存(回车是换行),Esc 放弃。" + "隐藏的那几行,这一格就是「当初为什么隐藏它」——" + "是「暂时挤爆、以后会好」还是「这条路没了」,半年后要不要取消隐藏全看它。" + (摁 && 记.何时 ? "(" + 记.何时 + " 隐藏的)" : ""));
+    const 连 = el("td", {
+      类: "连 " + (记.连通 === "通" ? "蓝" : 记.连通 === "不通" ? "红" : "待"),
+      title: 记.连通 ? (记.测于 || "") + " 真发了一句「回两个字:收到」。它回的原话:" + (记.测出的话 || "(空的)") : "还没真打过这个模型。右边「测试」会**真发一次**最短的问话 ——" + "跟正经调用走同一条路:一样过节流、一样进下面那张记录表。",
+      文: 记.连通 === "通" ? "✓ 通" : 记.连通 === "不通" ? "✗ 不通" : "— 没测过"
+    });
+    const 费 = { 免费: ["蓝", "¥0 免费"], 收费: ["琥", "¥ 收费"], 查不到: ["待", "? 查不到"] }[记.免费] || ["待", "— 没查"];
+    const 费格 = el("td", {
+      类: "连 " + 费[0],
+      文: 费[1],
+      title: 记.免费 ? (记.免费 === "免费" ? "这个模型用它不花钱(免费档一般有次数上限,用超了会被拒)。" : 记.免费 === "收费" ? "这个模型按用量扣钱,得先在那家充值或绑卡。" : "官网上没找到这个模型的价格,可能是改了名或下架了,用之前自己去官网确认。") + (记.免费出处 ? " 出处:" + 记.免费出处 : "") : "还没人照官网查过这个模型要不要钱。"
+    });
+    const 测 = el("button", {
+      类: "mini",
+      文: "测试",
+      title: "真给这个模型发一句最短的问话,看它答不答得上来。" + "**这是一次真调用**:烧这一家的额度、要等几秒、也会记进下面那张记录表。" + "回来只写进这一行,不会替你隐藏谁 —— 隐不隐藏是你的决定。"
+    });
+    测.addEventListener("click", () => 走(测, "/api/probe", { 供应商: s.名, 模型: m }, "测着…"));
+    const 档情 = (s.模型档位 || {})[m] || null;
+    const 探过 = !!档情 && 档情.来源 !== "没探过";
+    const 是生图家 = 像生图网址(s.地址 || "");
+    const 档文 = 是生图家 ? "— 生图没这格" : !探过 ? 档情 && 档情.过期 ? "⚠ 旧记录" : "— 没探过" : 档情.来源 === "不吃这一格" ? "✗ 没这格,用它自己默认" : 档情.来源 === "探不出来" ? "⚠ 问不出,摆的是候选" : "✓ " + 档情.档们.join("·");
+    const 档格 = el("td", {
+      类: "连 " + (是生图家 || !探过 ? "待" : 档情.来源 === "接口自报" ? "蓝" : "红"),
+      title: 是生图家 ? "画图那条路没有「推理强度」这一格 —— 它发的是提示词和尺寸,不发思考档位。" + "所以这一行不用探,也没什么可探的。" : !探过 ? "还没问过这个模型认哪几档。功能行的推理强度下拉框现在给的是**按这一家类型猜的候选值**" + "—— 它可能多几档(xhigh、max 点不到就是白丢能力),也可能压根没有这一格。" + "右边「探档位」问一次就知道了:发一个写错的值,接口自己会把合法档列出来," + "几乎不花额度。" + (档情 && 档情.过期 ? "(它上次探过,但那之后这一家的地址或模型名变了。)" : "") : 档情.来源 === "不吃这一格" ? "拿一个写错的强度值试过,它没报错、照样回话 —— 说明它压根不看这一格。" + "所以功能行上那个下拉框对它是灰的,底座一个字段都不发给它 —— **它这一次想多久," + "由它自己的出厂默认定**,底座既问不出那是多少、也改不动。要调只能换个模型。(" + (档情.探于 || "") + " 探的)" : 档情.来源 === "探不出来" ? "问过了,但这一家没把合法档列出来(报的是权限错、或者只说「非法参数」)。" + "所以功能行那一格摆的是**按这一家类型猜的候选值**,不是它自己报的 —— 挑的那一档" + "它可能不认,那次调用会被拒。再点这颗钮多半还是这个结果。(" + (档情.探于 || "") + " 探的)" : "这个模型认这几档:" + 档情.档们.join("、") + "。功能行那个下拉框摆的就是它们," + "「关闭」发的是最低的那一档。(" + (档情.探于 || "") + " 问的,接口自己列的)",
+      文: 短话(档文, 22)
+    });
+    const 探 = 是生图家 ? el("span", {
+      类: "态",
+      文: "—",
+      title: "画图那条路没有推理强度这一格,不用探。"
+    }) : el("button", {
+      类: "mini",
+      文: 探过 ? "重探" : "探档位",
+      title: "问这个模型「你认哪几档推理强度」:故意发一个写错的值,接口会把自己认的档列出来。" + "**一次请求、几乎不花额度**(400 是校验就返回的,压根没进模型),但照旧过这家的节流。" + "跟左边「测试」是两回事:那颗问「通不通」,这颗问「有哪几档」。" + "命令行那家不发请求 —— 直接从它 --help 里读,一个 token 都不烧。"
+    });
+    if (!是生图家) {
+      探.addEventListener("click", () => 走(探, "/api/effortprobe", { 供应商: s.名, 模型: m }, "问着…"));
+    }
+    const 实测 = 记.看图来源 === "测试";
+    const 能看 = 标得了眼(s, 记);
+    const 眼 = 能看 ? el("span", {
+      类: "眼",
+      title: 实测 ? "能看图:" + (记.测于 || "") + " 点「测试」时递了一张纯色小图问颜色,它答对了。" : "能看图:这一家的模型清单自己写着它收图,还没点「测试」真递过。",
+      文: "\uD83D\uDC41"
+    }) : null;
+    const 秒 = 记.测速毫秒 == null ? "" : (记.测速毫秒 / 1000).toFixed(1) + " 秒";
+    const 况 = 近况(s.名, 记.模型);
+    if (秒) {
+      连.textContent += " · " + 秒;
+      连.title += " 那一问从发出到回来用了 " + 秒 + ",节流排队等的不算。" + (实测 && 能看 ? "它是带图问的,会比纯文字慢一点。" : "");
+    }
+    if (况) {
+      连.appendChild(el("div", {
+        类: "近况" + (况.常败 ? " 红" : ""),
+        文: (况.常败 ? "⚠ " : "") + 况.话
+      }));
+      连.title += " 下面那行是近 7 天软件真调它的结果:成了几次 / 一共几次,数的是调用记录。" + (况.常败 ? "成的不到一半,常卡,选它之前想一想。" : "");
+      if (况.常败)
+        连.className = "连 红";
+    }
+    const 钮 = el("button", {
+      类: "mini",
+      文: 摁 ? "取消隐藏" : "隐藏",
+      "aria-disabled": 规矩挡 || undefined,
+      title: 规矩挡 ? "这一行是代码定的规矩挡的,不是你隐藏的,这颗钮改不动它。" + 挡.出路 + "(" + 挡.话 + ")" : 摁 ? "让它重新能选。下次点「拉取模型列表」它也不会再被挡掉 —— " + "模型复活了、或者当初只是赶上人家挤爆,就用这颗钮。这一行的备注和判断都留着。" : "把它变成灰的:下拉框里它还在、看得见、但选不了," + "点「拉取模型列表」也不会把它悄悄放出来。随时能取消,不是删。"
+    });
+    钮.addEventListener("click", async () => {
+      if (规矩挡) {
+        报(回执, false, "这颗钮改不动它 —— " + 挡.出路);
+        回执.scrollIntoView({ block: "nearest", inline: "nearest" });
+        return;
+      }
+      if (!await 问改((摁 ? "取消隐藏" : "隐藏") + "「" + m + "」?", 摁 ? "它会回到下拉框里、能选。" : "下拉框里它变灰、选不了;这一行和备注都留着,随时能取消隐藏。", 摁 ? "取消隐藏" : "隐藏"))
+        return;
+      return 摁 ? 走(钮, "/api/unhide", { 供应商: s.名, 模型: m }) : 走(钮, "/api/hide", { 供应商: s.名, 模型: m, 为什么: 笔值.备注 });
+    });
+    return el("tr", {}, el("td", {}, el("code", { 类: 挡 ? "灰名" : "", 文: m }), 眼, 规矩挡 ? el("span", { 类: "牌", title: 挡.话 + " " + 挡.出路, 文: 挡.牌 }) : null), 费格, 连, 档格, 判断格, 备注格, el("td", {}, el("div", { 类: "操作" }, 测, 探, 钮)));
+  };
+  const 区 = (标题, 名单, 悬浮) => {
+    if (!名单.length)
+      return null;
+    const 表 = el("table", { 类: "模表" });
+    const 头 = el("thead");
+    头.appendChild(el("tr", {}, el("th", { "data-列": "模型", title: "ID = 官方模型名:这家接口认的那个名字,拨号时原样发过去。", 文: "ID" }), el("th", {
+      "data-列": "费用",
+      title: "这个模型要不要钱:¥0 免费 = 不花钱(一般有次数上限);¥ 收费 = 按用量扣钱;" + "? 查不到 = 官网没找到价格;— 没查 = 还没人查过。是照各家官网定价页查的,指到格子上看出处。",
+      文: "费用"
+    }), el("th", { "data-列": "连通", title: "上次真打这个模型的结果,和那一问用了几秒(越小越快,节流排队等的不算)。" + "没测过 = 还没人点过右边「测试」。", 文: "连通" }), el("th", { "data-列": "推理强度", title: "这个模型认哪几档推理强度 —— 接口自己列出来的,不是猜的。" + "「没探过」= 功能行那个下拉框现在给的还是候选值。", 文: "推理强度" }), el("th", { "data-列": "判断", title: "会话写的一句:这个模型适合干什么、别拿它干什么。" + "你也能改:指到格子上点右边 ✎,改完点格子外面就存。", 文: "判断 ✎" }), el("th", { "data-列": "备注", title: "你自己写的一句,隐藏的那几行就是「当初为什么」。" + "指到格子上点右边 ✎ 改,点格子外面就存,回车是换行。", 文: "备注 ✎" }), el("th", { "data-列": "操作", title: "测试 = 真发一次最短的问话,看它答不答得上来;探档位 = 问它认哪几档推理强度," + "一次请求、几乎不花额度;隐藏 = 下拉框里它变灰、选不了,随时能取消。", 文: "操作" })));
+    表.appendChild(头);
+    const 身 = el("tbody");
+    名单.forEach((m) => 身.appendChild(一行(m)));
+    表.appendChild(身);
+    表.dataset.横 = s.名 + "|" + 标题;
+    接列宽(表, "aibase-模表");
+    UI格改(表, { 存: (格, 新) => 格._存(新) });
+    return el("div", {}, el("div", { 类: "模区", title: 悬浮 }, el("span", { 文: 标题 }), el("span", { 类: "划", 文: " · 表格能往右划" })), el("div", { 类: "滚" }, 表));
+  };
+  const 能选 = 全.filter((m) => !选不了(s, m, 笔.get(m)));
+  const 拨不动 = 全.filter((m) => 选不了(s, m, 笔.get(m)));
+  const 上 = 区("可选 " + 能选.length + " 个", 能选, "下面每个功能的模型下拉框里,能点得动的就是这几个。");
+  const 规矩挡的 = 拨不动.filter((m) => (选不了(s, m, 笔.get(m)) || {}).由 === "规矩").length;
+  const 手隐的 = 拨不动.length - 规矩挡的;
+  const 下 = 区("不可选 " + 拨不动.length + " 个" + (规矩挡的 ? " · 规矩挡 " + 规矩挡的 : "") + (手隐的 ? " · 你隐藏的 " + 手隐的 : ""), 拨不动, "这些在下拉框里还看得见、只是灰的、点不动,也不是删。两种原因:" + "你自己点过「隐藏」的,点「取消隐藏」随时回来;" + "名字后面缀着「⛔ 别在这儿选」的是代码定的规矩,那颗钮对它是灰的、点了也没用。");
+  if (上)
+    详.appendChild(上);
+  if (下)
+    详.appendChild(下);
+  const 字 = (折) => "全部 " + 全.length + " 个 " + (折 ? "▾" : "▴");
+  const 开 = el("button", {
+    类: "mini",
+    文: 字(收着),
+    title: "这一家每个模型一行:能不能选、自己写的备注、会话给的判断、上次测出来通没通," + "还能挨个真测一次、把不想要的隐藏起来(随时能取消)。"
+  });
+  开.addEventListener("click", () => {
+    详.hidden = !详.hidden;
+    开.textContent = 字(详.hidden);
+    记折(标识, 详.hidden);
+  });
+  return { 开, 详 };
+}
+const 横位 = {};
+addEventListener("resize", () => 记横位());
+function 记横位() {
+  for (const 表 of document.querySelectorAll(".模表[data-横]")) {
+    const 滚 = 表.closest(".滚");
+    if (!滚)
+      continue;
+    const 名 = 表.dataset.横;
+    if (横位[名])
+      滚.scrollLeft = 横位[名];
+    const 区 = 滚.previousElementSibling;
+    if (区 && 区.classList.contains("模区")) {
+      const 溢 = 滚.scrollWidth > 滚.clientWidth + 1;
+      区.classList.toggle("能划", 溢);
+      const 划 = 区.querySelector(".划");
+      if (划 && 溢) {
+        const 右 = 滚.scrollLeft + 滚.clientWidth;
+        const 头 = 表.rows[0];
+        let 没露全 = 0;
+        for (const 格 of 头 ? 头.cells : []) {
+          if (格.offsetLeft + 格.offsetWidth > 右 + 1)
+            没露全++;
+        }
+        划.textContent = 没露全 ? " · 表格往右划还有 " + 没露全 + " 列" : " · 表格能往右划";
+      }
+    }
+    if (滚.dataset.听着)
+      continue;
+    滚.dataset.听着 = "1";
+    滚.addEventListener("scroll", () => {
+      横位[名] = 滚.scrollLeft;
+    });
+  }
+}
+function 模型行(s) {
+  const 回执 = el("div", { 类: "回执" });
+  const 能问 = s.要密钥;
+  const 数 = el("span", {
+    类: "态 " + (s.模型们.length ? "蓝" : "红"),
+    title: s.模型们.length ? "下面「功能」里那些模型下拉框,选项就是这一份:" + s.模型们.join("、") : "这一家还没有模型清单,下拉框里只剩「自定义…」,得自己把模型名打进去。",
+    文: s.模型们.length ? "✓ 清单 " + s.模型们.length + " 个" : "✗ 还没有模型清单"
+  });
+  const 钮 = el("button", {
+    类: "mini",
+    disabled: !能问 || undefined,
+    title: 能问 ? "问这一家「你有哪些模型」,把回来的名字盖掉上面那个清单(是覆盖,不是合并)——" + "对家下架了的模型留着,只会让人在下拉框里选到一个必然报错的名字。" + "真要一个清单外的模型,下拉框里的「自定义…」那一项还在。" + "拉完还会顺手逐个问新模型「你认哪几档推理强度」(一个一次请求、几乎不花额度," + "但要过这家的节流,所以会花点时间);进度条出在这颗钮底下,点「■ 停止」就停。" : "这一家是本机命令那一种:它调的是这台电脑上的「" + s.地址 + "」程序,不是网址," + "没有「列模型」那个接口可问。它能用哪些模型,只能照那个程序自己的说明," + "在「＋ 自己填一家」里用同名再存一次、把模型清单手打进去。",
+    文: "拉取模型列表"
+  });
+  if (探档位块.get(s.名)?.跑中)
+    钮.disabled = true;
+  钮.addEventListener("click", async () => {
+    钮.disabled = true;
+    数.textContent = "问着…";
+    try {
+      const 结 = await 打("/api/models", { 供应商: s.名 });
+      if (!结.成了) {
+        报(回执, false, 结.说 || 结.错 || "没问到");
+        return;
+      }
+      const 探过的 = new Set(Object.entries(s.模型档位 || {}).filter(([, v]) => v.来源 !== "没探过").map(([k]) => k));
+      const 待探 = 像生图网址(s.地址 || "") ? [] : (结.清单 || []).filter((m) => !探过的.has(m));
+      if (!待探.length) {
+        问完的话 = { 谁: s.名, 成: true, 话: 结.说 + "。下面每个模型下拉框里现在都能选到它们了" };
+        await 装();
+        return;
+      }
+      报(回执, true, 结.说 + ";正在逐个问它们认哪几档推理强度(" + 待探.length + " 个)");
+      const 记 = { 位: el("div"), 跑中: true };
+      探档位块.set(s.名, 记);
+      长活槽.replaceChildren(记.位);
+      let 果;
+      try {
+        const 跑着 = UI长活.跑(记.位, {
+          动作: "探档位",
+          条们: 待探,
+          条名: (m) => m,
+          同时: false,
+          位置: "模型供应商 · " + s.名 + " · 拉取模型列表",
+          做一条: async (m) => {
+            const 探 = await 打("/api/effortprobe", { 供应商: s.名, 模型: m });
+            if (!探.成了)
+              throw new Error(探.说 || 探.错 || "没问出来");
+            return 探;
+          }
+        });
+        果 = await 跑着;
+      } finally {
+        记.跑中 = false;
+      }
+      if (!果.没成.length)
+        探档位块.delete(s.名);
+      问完的话 = {
+        谁: s.名,
+        成: true,
+        话: 结.说 + ";" + (果.停了 ? "档位问到一半停了," : "") + "问出了 " + 果.成.length + "/" + 待探.length + " 个模型认哪几档(表里「推理强度」那一格看得到)"
+      };
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "模型清单未取到 —— 过一会儿再试");
+    } finally {
+      钮.disabled = false;
+    }
+  });
+  const 表 = 模型表(s);
+  const 长活槽 = el("div");
+  if (探档位块.has(s.名))
+    长活槽.append(探档位块.get(s.名).位);
+  const 值 = el("div", {}, el("div", { 类: "行" }, 数, 钮, 表 && 表.开), 回执, 长活槽);
+  if (问完的话 && 问完的话.谁 === s.名)
+    报(回执, 问完的话.成, 问完的话.话);
+  return { 值, 详: 表 && 表.详 };
+}
+function 限速格(s) {
+  const 隔 = el("input", {
+    type: "number",
+    min: "0",
+    step: "0.5",
+    value: String(s.最小间隔秒 || 0),
+    title: "两次调用之间至少隔这么多秒。填 0 = 不限。底座会自己等够再发,不会报错。"
+  });
+  隔.style.width = "62px";
+  const 顶 = el("input", {
+    type: "number",
+    min: "0",
+    step: "10",
+    value: String(s.每小时上限 || 0),
+    title: "一小时最多调这一家多少次。撞上了这次就不发,直接告诉调用方到顶了。填 0 = 不限。"
+  });
+  顶.style.width = "62px";
+  const 回执 = el("div", { 类: "回执" });
+  const 钮 = el("button", { 类: "mini", title: "存进本机配置库,下一次调用就按新的来。", 文: "保存" });
+  钮.addEventListener("click", async () => {
+    钮.disabled = true;
+    try {
+      const 结 = await 打("/api/throttle", {
+        供应商: s.名,
+        最小间隔秒: Number(隔.value) || 0,
+        每小时上限: Number(顶.value) || 0
+      });
+      报(回执, 结.成了, 结.成了 ? "存好了" : 结.说 || 结.错 || "调用频率未保存");
+      if (结.成了)
+        await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "调用频率未保存 —— 过一会儿再试");
+    } finally {
+      钮.disabled = false;
+    }
+  });
+  const 秒 = Number(s.最小间隔秒) || 0, 次 = Number(s.每小时上限) || 0;
+  const 看 = el("span", {
+    类: "态",
+    文: !秒 && !次 ? "不限" : [秒 ? 秒 + " 秒一次" : "", 次 ? 次 + " 次/小时" : ""].filter(Boolean).join(" · ")
+  });
+  const 改 = el("button", { 类: "mini", title: "改这一家的调用频率上限。点了出两个数字框,改完按保存。", 文: "改" });
+  const 编 = [隔, el("span", { 类: "态", 文: "秒一次" }), 顶, el("span", { 类: "态", 文: "次/小时" }), 钮];
+  for (const x of 编)
+    x.hidden = true;
+  改.addEventListener("click", () => {
+    看.hidden = 改.hidden = true;
+    for (const x of 编)
+      x.hidden = false;
+    隔.focus();
+  });
+  return el("div", {}, el("div", { 类: "行" }, 看, 改, ...编), 回执);
+}
+function 剩几天(日期) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(日期 || "");
+  if (!m)
+    return null;
+  const 今 = new Date;
+  const 零点 = new Date(今.getFullYear(), 今.getMonth(), 今.getDate());
+  return Math.round((new Date(+m[1], +m[2] - 1, +m[3]) - 零点) / 86400000);
+}
+function 余额格(s) {
+  const 回执 = el("div", { 类: "回执" });
+  const 于 = (s.余额于 || "").slice(5, 16);
+  const 缺 = (s.余额 || "").startsWith("⚠");
+  const 额 = s.余额 ? el("span", {
+    类: "态" + (缺 ? " 琥" : ""),
+    title: "最近一次拿到的时间:" + s.余额于 + "。DeepSeek 点「查余额」更新;Groq 每次调用后自己更新(按模型各算各的)。",
+    文: s.余额 + " · " + 于
+  }) : el("span", {
+    类: "态 淡",
+    title: s.查得了余额 ? "还没查过,点「查余额」。" : "这一家没有查余额的接口;Groq 调用一次后这里会显示今天还剩几次。",
+    文: "余额暂无数据"
+  });
+  const 行一 = el("div", { 类: "行" }, 额);
+  if (s.查得了余额) {
+    const 查 = el("button", {
+      类: "mini",
+      文: "查余额",
+      title: s.有密钥 ? "问一次官网接口,不花钱、不占调用次数。" : "先在上面填好密钥才查得了。"
+    });
+    查.disabled = !s.有密钥;
+    查.addEventListener("click", async () => {
+      查.disabled = true;
+      let 原 = "";
+      try {
+        const 结 = await 打("/api/balance", { 供应商: s.名 });
+        if (结.成了) {
+          await 装();
+          return;
+        }
+        原 = 结.说 || 结.错 || "";
+      } catch (e) {
+        console.error(e);
+        原 = e && (e.stack || e.message) || String(e);
+      } finally {
+        查.disabled = !s.有密钥;
+      }
+      报(回执, false, "余额没查到,稍后再试或看官网");
+      const 全文 = `余额没查到,稍后再试或看官网
+原始报错:` + 原 + `
+位置:/api/balance · ` + s.名 + `
+时间:` + new Date().toISOString() + `
+错误号:BAL-` + Date.now().toString(36).toUpperCase();
+      const 复 = el("button", { 类: "mini", 文: "⧉ 复制报错" });
+      复.addEventListener("click", () => 复制日志报错(复, 全文));
+      回执.append(" ", 复);
+    });
+    行一.append(查);
+  }
+  if (s.用量页)
+    行一.append(el("a", {
+      类: "领key",
+      href: s.用量页,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      title: s.用量页,
+      文: "官网用量页 →"
+    }));
+  const 天 = 剩几天(s.到期日);
+  const 期 = !s.到期日 ? el("span", { 类: "态 淡", title: "订阅续费日、免费额度截止日或充值包过期日,点「改」填上。", 文: "到期日未填" }) : 天 < 0 ? el("span", { 类: "态 红" }, el("i", { 类: "符 坏", 文: "✗" }), el("span", { 文: "已过期 " + -天 + " 天 · " + s.到期日 })) : 天 <= 7 ? el("span", { 类: "态 琥", title: "7 天内到期,记得续费或换一家。" }, el("i", { 类: "符 提", 文: "⚠" }), el("span", { 文: "还剩 " + 天 + " 天 · " + s.到期日 })) : el("span", { 类: "态", 文: "还剩 " + 天 + " 天 · " + s.到期日 });
+  const 框 = el("input", { type: "date", value: s.到期日 || "", title: "这一家额度哪天到期。" });
+  const 存 = el("button", { 类: "mini", title: "存进本机配置库。清空日期再保存 = 不填。", 文: "保存" });
+  存.addEventListener("click", async () => {
+    存.disabled = true;
+    try {
+      const 结 = await 打("/api/expiry", { 供应商: s.名, 到期日: 框.value || "" });
+      if (结.成了) {
+        await 装();
+        return;
+      }
+      报(回执, false, 结.说 || 结.错 || "到期日未保存");
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "到期日未保存 —— 过一会儿再试");
+    } finally {
+      存.disabled = false;
+    }
+  });
+  const 改 = el("button", { 类: "mini", title: "填或改这一家的到期日。", 文: s.到期日 ? "改" : "填" });
+  框.hidden = 存.hidden = true;
+  改.addEventListener("click", () => {
+    期.hidden = 改.hidden = true;
+    框.hidden = 存.hidden = false;
+    框.focus();
+  });
+  return el("div", {}, 行一, el("div", { 类: "行" }, 期, 改, 框, 存), 回执);
+}
+let 加完的话 = null;
+function 拼地址(半截) {
+  const a = (半截 || "").trim();
+  if (!a)
+    return "";
+  if (a.indexOf("/models/") >= 0)
+    return a;
+  const 无尾杠 = a.replace(/\/+$/, "");
+  for (const 尾 of 状态.地址尾巴们 || []) {
+    if (无尾杠.endsWith(尾))
+      return 无尾杠;
+  }
+  return 无尾杠 + "/chat/completions";
+}
+function 加一家卡() {
+  const 卡 = el("div", { hidden: true });
+  const 回执 = el("div", { 类: "回执" });
+  if (加完的话) {
+    报(回执, 加完的话.成, 加完的话.话);
+    加完的话 = null;
+    卡.hidden = false;
+  }
+  const 册区 = el("div", { hidden: true });
+  const 表 = el("div", { hidden: true });
+  const 开册 = el("button", {
+    类: "主钮",
+    title: "出厂自带一张厂商名册,上面记着每一家的网址、模型清单、调用频率、去哪领 key。" + "从这儿挑一家,这几格就替你填好了,你只剩粘一把密钥 —— 不用去官网查网址、不用手打模型名。" + "名册里没有你要的那家,就用右边那颗「＋ 自己填一家」。",
+    文: "＋ 从名册里挑一家"
+  });
+  const 开填 = el("button", {
+    类: "mini",
+    title: "名册里没有的那些家走这条路:名称、类型、网址、模型清单四格自己填。" + "网址只填官网给的前半截也行 —— 底下那行灰字会把真正会发出去的整串显示给你看。",
+    文: "＋ 自己填一家"
+  });
+  const 名 = el("input", {
+    type: "text",
+    placeholder: "比如 CPA 反代",
+    title: "随便起个名,面板上和底下的记录表里都显示这个名。" + "跟上面已有的一家重名 = 改那一家的网址和模型清单,不会多出一行,密钥也不动。"
+  });
+  const 类 = el("select", {
+    title: "在线服务:走网络发请求,要填这家给你的密钥。" + "本机命令:调这台电脑上已经装好的那个程序,用它自己已经登录的额度,不用填密钥。"
+  });
+  类.appendChild(el("option", { value: "网页接口", selected: true, 文: "网络 API(需密钥)" }));
+  类.appendChild(el("option", { value: "命令行", 文: "本地命令(免密钥)" }));
+  const 址标 = 必标("网址");
+  const 址 = el("input", {
+    type: "text",
+    placeholder: "https://api.deepseek.com",
+    title: "请求发去哪儿。官网给的那半截就行 —— 底下那行灰字会把真正会发出去的整串显示给你看。" + "本机命令填命令名(比如 claude)。"
+  });
+  const 预行 = el("div", { 类: "预行", hidden: true });
+  const 画预览 = () => {
+    const 全 = 类.value === "命令行" ? "" : 拼地址(址.value);
+    if (!全 || 全 === (址.value || "").trim()) {
+      预行.hidden = true;
+      预行.textContent = "";
+      return;
+    }
+    预行.hidden = false;
+    预行.textContent = "";
+    预行.append("实际会发到:", el("span", { 类: "预", 文: 全 }));
+  };
+  址.addEventListener("input", 画预览);
+  const 模 = el("input", {
+    type: "text",
+    placeholder: "用逗号隔开,可以先留空",
+    title: "这些名字会出现在下面「功能」那块的模型下拉框里。" + "留空也行 —— 留空的话那个下拉框只剩「自定义…」一项,到时候手动打一个模型名再按回车。"
+  });
+  类.addEventListener("change", () => {
+    const 是命令 = 类.value === "命令行";
+    址标.firstChild.textContent = 是命令 ? "命令" : "网址";
+    址.placeholder = 是命令 ? "claude" : "https://api.deepseek.com";
+    画预览();
+  });
+  const 收 = () => {
+    表.hidden = true;
+    册区.hidden = true;
+    卡.hidden = true;
+    名.value = "";
+    址.value = "";
+    模.value = "";
+    类.value = "网页接口";
+    址标.firstChild.textContent = "网址";
+    址.placeholder = "https://api.deepseek.com";
+    画预览();
+    UI填错.清全(表);
+    拦.存了();
+  };
+  const 册肉 = el("div");
+  const 照名册加 = async (c, 钮) => {
+    钮.disabled = true;
+    try {
+      const 结 = await 打("/api/provider", { 名: c.名, 照名册: true });
+      if (!结.成了) {
+        报(回执, false, 结.说 || 结.错 || "没加上");
+        钮.disabled = false;
+        return;
+      }
+      加完的话 = { 成: true, 话: "加好了:「" + c.名 + "」。还差一步 —— 在上面它自己那张卡上粘密钥" + (c.注册页 ? ",那张卡上有一行「去这里领 key →」" : "") + "。调用频率已按名册给好,在那张卡最底下能改" };
+      收();
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "供应商未添加 —— 过一会儿再试");
+      钮.disabled = false;
+    }
+  };
+  const 画册 = () => {
+    册肉.textContent = "";
+    const 册 = 状态.名册 || [];
+    const 已有 = new Set((状态.供应商 || []).map((x) => x.名));
+    if (!册.length) {
+      册肉.appendChild(el("div", {
+        类: "说明",
+        文: "名册是空的 —— 出厂那份清单没读到,用右边「＋ 自己填一家」照样加得上"
+      }));
+      return;
+    }
+    册肉.appendChild(el("div", { 类: "说明", 文: "打「✓ 免费」的不花钱,其余看每行的备注" }));
+    for (const c of 册) {
+      const 有了 = 已有.has(c.名);
+      const 选 = el("button", {
+        类: "mini",
+        title: 有了 ? "上面的列表里已经有这个名字了 —— 要改它,去它自己那张卡上改。" : "把「" + c.名 + "」这一家的网址、模型清单、调用频率一次抄进你的配置库。" + "抄完就跟名册没关系了,以后改哪一格都是改库里那一行。",
+        文: 有了 ? "已经有了" : "选它"
+      });
+      if (有了)
+        选.disabled = true;
+      else
+        选.addEventListener("click", () => 照名册加(c, 选));
+      const 行 = el("div", { 类: "册行", title: c.备注 || "" }, el("span", { 类: "册名", 文: c.名 }));
+      if (c.免费)
+        行.appendChild(el("span", { 类: "标 免", 文: "✓ 免费" }));
+      行.appendChild(el("span", { 类: "册注", 文: c.备注 || "" }));
+      行.appendChild(选);
+      册肉.appendChild(行);
+    }
+  };
+  开册.addEventListener("click", () => {
+    画册();
+    卡.hidden = false;
+    册区.hidden = false;
+    表.hidden = true;
+  });
+  开填.addEventListener("click", () => {
+    卡.hidden = false;
+    表.hidden = false;
+    册区.hidden = true;
+    名.focus();
+  });
+  const 存 = el("button", {
+    类: "主钮",
+    title: "存进本机的配置库。只落在这台电脑上,不会传去别处。",
+    文: "保存"
+  });
+  const 拦 = UI没存拦(表);
+  存.addEventListener("click", async () => {
+    if (!UI填错.查([
+      { 框: 名, 话: "名称不能空" },
+      { 框: 址, 话: (类.value === "命令行" ? "命令" : "网址") + "不能空" }
+    ]))
+      return;
+    const 新址 = 类.value === "命令行" ? 址.value.trim() : 拼地址(址.value);
+    const 旧 = (状态.供应商 || []).find((x) => x.名 === 名.value.trim());
+    if (旧 && !await 问改("已经有一家叫「" + 旧.名 + "」,改它?", `不会多出一家,改的是原来那一家:
+网址 ` + (旧.地址 || "(空)") + " → " + 新址 + (模.value.trim() ? `
+模型清单换成这儿填的` : `
+模型清单留空 = 不动`) + `
+密钥不动。`, "改原来那家"))
+      return;
+    存.disabled = true;
+    try {
+      const 结 = await 打("/api/provider", {
+        名: 名.value,
+        类型: 类.value,
+        地址: 新址,
+        模型们: 模.value
+      });
+      if (!结.成了) {
+        报(回执, false, 结.说 || 结.错 || "没加上");
+        return;
+      }
+      加完的话 = { 成: true, 话: !结.新建 ? "本来就有这个名字,改的是原来那一家(密钥没动)" : 类.value === "网页接口" ? "加好了。还差一步:在上面它自己那张卡上填密钥 —— 就是那家网站后台复制的一串授权码。" + "调用频率已给了常用值,在那张卡最底下能改" : "加好了。上面能看到它;这台电脑上没装那个命令的话,它那张卡是灰的。" + "调用频率已给了常用值,在那张卡最底下能改" };
+      收();
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "供应商未添加 —— 检查填写后再试");
+    } finally {
+      存.disabled = false;
+    }
+  });
+  const 撤 = el("button", { 类: "mini", title: "不加了,把这个表单收起来。", 文: "取消" });
+  撤.addEventListener("click", async () => {
+    if (!await 拦.问())
+      return;
+    加完的话 = null;
+    收();
+    回执.textContent = "";
+  });
+  const 册撤 = el("button", { 类: "mini", title: "不挑了,退回上一步。", 文: "取消" });
+  册撤.addEventListener("click", () => {
+    加完的话 = null;
+    收();
+    回执.textContent = "";
+  });
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对 填格" }, 必标("名称"), 名)));
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对 填格" }, el("label", { 文: "类型" }), 类)));
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对 填格" }, 址标, 址)));
+  表.appendChild(预行);
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对 填格" }, el("label", { 文: "模型清单" }), 模)));
+  表.appendChild(el("div", { 类: "行" }, 存, 撤));
+  册区.appendChild(册肉);
+  册区.appendChild(el("div", { 类: "行" }, 册撤));
+  卡.appendChild(册区);
+  卡.appendChild(表);
+  卡.appendChild(回执);
+  return { 内容: 卡, 开册, 开填 };
+}
+const 自定义 = "__自定义__";
+const 关档 = "关";
+function 分组(功能们) {
+  const 出 = new Map;
+  for (const f of 功能们) {
+    const 全名 = f.父功能 || f.功能名;
+    const 项目 = 全名.split(" · ")[0];
+    if (!出.has(项目))
+      出.set(项目, new Map);
+    const 口们 = 出.get(项目);
+    if (!口们.has(全名))
+      口们.set(全名, []);
+    口们.get(全名).push(f);
+  }
+  return 出;
+}
+const 区色们 = ["var(--蓝)", "var(--青)"];
+const 区图标们 = { "示例": "\uD83D\uDCE6", "通用": "\uD83C\uDF9B" };
+function 加功能那一块(摊开) {
+  const 区 = el("div", { 类: "区 备" });
+  const 头 = el("div", { 类: "区头" }, el("span", { 类: "区名", 文: "接新软件才用得上" }), el("span", {
+    类: "数",
+    title: "挂一条新功能到底座上。**平时用不到这儿** —— 功能名要跟那个软件代码里写死的" + "那一串一模一样,在这儿手打一个新名字,没有哪个软件会报那个名字来找底座," + "加了也不会自动接上。真要接一个新软件,让写代码的那一方来这儿挂。",
+    文: "＋ 添加功能"
+  }), el("span", { 类: "箭", 文: "▸" }));
+  区.appendChild(头);
+  const 肉 = el("div", { 类: "区肉" }, 加一个功能卡());
+  区.appendChild(肉);
+  const 记着 = 读折()["加功能"];
+  if (记着 === undefined ? 摊开 : !记着)
+    区.classList.add("open");
+  头.addEventListener("click", (e) => {
+    if (e.target.closest("button,input,select,a"))
+      return;
+    区.classList.toggle("open");
+    记折("加功能", !区.classList.contains("open"));
+  });
+  return 区;
+}
+function 区头一格(项目, 格, 现值, 提示字, 额外类, 悬浮) {
+  const 框 = el("input", {
+    类: "区注 " + (额外类 || ""),
+    type: "text",
+    value: 现值 || "",
+    placeholder: 提示字,
+    title: 悬浮
+  });
+  框.addEventListener("click", (e) => e.stopPropagation());
+  框.addEventListener("change", async () => {
+    框.disabled = true;
+    try {
+      const 结 = await 打("/api/projectnote", { 项目名: 项目, [格]: 框.value.trim() });
+      框.classList.toggle("存坏了", !结.成了);
+      框.title = 结.成了 ? 悬浮 : "没存上:" + (结.说 || 结.错 || "不知道为什么");
+      if (结.成了)
+        await 装();
+    } catch (e) {
+      框.classList.add("存坏了");
+      框.title = "没存上:" + e;
+    } finally {
+      框.disabled = false;
+    }
+  });
+  return 框;
+}
+function 网址位(项目, 网址) {
+  const 位 = el("span", { 类: "网址位" });
+  let 存过 = false;
+  const 摆框 = () => {
+    位.textContent = "";
+    const 框 = 区头一格(项目, "网址", 网址, "http://127.0.0.1:8000/", "网址格", "这个软件自己那一页的网址(http:// 或 https:// 开头),比如 http://127.0.0.1:8000/。" + "填完按回车就存,这一格变回一颗「打开」钮,点它在新标签页开那一页。" + "底座一个字都不读它 —— 填什么都不影响拨号。");
+    框.addEventListener("change", () => {
+      存过 = true;
+    });
+    位.appendChild(框);
+    框.focus();
+    框.select();
+    框.addEventListener("blur", () => {
+      setTimeout(() => {
+        if (!存过)
+          摆钮();
+      }, 120);
+    });
+  };
+  const 摆钮 = () => {
+    位.textContent = "";
+    if (网址) {
+      位.appendChild(el("a", {
+        类: "mini 打开",
+        href: 网址,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        title: "在新标签页打开「" + 网址 + "」",
+        onclick: (e) => e.stopPropagation(),
+        文: "打开 ↗"
+      }));
+      位.appendChild(el("button", {
+        类: "mini 改址",
+        title: "改这一行跳到哪儿去。现在填的是「" + 网址 + "」,点这儿就地改。",
+        文: "改网址",
+        onclick: (e) => {
+          e.stopPropagation();
+          摆框();
+        }
+      }));
+    } else {
+      位.appendChild(el("button", {
+        类: "mini 空址",
+        文: "＋ 网址",
+        title: "这个软件还没填过网址,所以这一行没有「打开」那颗钮。点这儿填上它自己那一页的" + "网址(比如 http://127.0.0.1:8000/),填完这儿就变成「打开 ↗」," + "以后从这一行直接跳过去。底座不读这一格,填不填都不影响拨号。",
+        onclick: (e) => {
+          e.stopPropagation();
+          摆框();
+        }
+      }));
+    }
+  };
+  摆钮();
+  return 位;
+}
+function 画功能() {
+  const 筐 = document.getElementById("功能");
+  筐.textContent = "";
+  粘贴钮们.length = 0;
+  整组粘法.clear();
+  if (!状态.功能.length) {
+    const 接页 = el("div", { 类: "功能页", "data-项目": 接新软件页 });
+    接页.appendChild(el("div", { 类: "空", 文: "暂无功能。点下面的「＋ 添加功能」新建第一个。" }));
+    接页.appendChild(加功能那一块(true));
+    筐.appendChild(接页);
+    return;
+  }
+  for (const [项目, 口们] of 安装功能分组()) {
+    const 模型数 = [...口们.values()].reduce((n, a) => n + a.filter((f) => f.启用 !== false).length, 0);
+    const 笔 = 状态.项目[项目] || { 备注: "", 网址: "" };
+    const 区 = el("div", { 类: "表区", "data-项目": 项目 });
+    const 头 = el("div", { 类: "表名" }, el("strong", { 文: 项目 }), 区头一格(项目, "备注", 笔.备注, "备注", "", "给这个软件写个你自己认得的名字,比如「记账」。写完按回车就存。" + "底座不读它 —— 写什么都不影响拨号。"), el("span", {
+      类: "数",
+      title: "这个软件有 " + 口们.size + " 个功能会用到 AI;每个功能底下可以挂好几个备选模型," + "合起来 " + 模型数 + " 个能选。取消了「启用」勾的那些不算在里头 —— " + "它们那边看不见。点这一条收起或摊开。",
+      文: 口们.size + " 个功能 · " + 模型数 + " 个模型"
+    }), 网址位(项目, 笔.网址), el("span", { 类: "表动作" }, 恢复宽钮(["aibase-功能表", "aibase-备表"], "点这颗把这一页的功能表和每条功能底下的备选小表的列宽都放回原样。")));
+    区.appendChild(头);
+    const 表 = el("table", { 类: "主表 功能表" });
+    表.appendChild(el("colgroup", {}, ...Array.from({ length: 10 }, () => el("col"))));
+    表.appendChild(el("thead", {}, el("tr", {}, el("th", { "data-列": "ID", title: "这一行功能的编号:建的时候程序发的,改名、挪先后都不变;删掉的号不再发。", 文: "ID" }), ...["功能名", "供应商", "模型", "推理强度", "备选", "启用", "提示", "操作"].map((字) => el("th", { "data-列": 字, 文: 字 })), el("th", { "data-列": "展开", "aria-label": "展开", 文: "" }))));
+    const 身 = 表.appendChild(el("tbody"));
+    for (const [全名, 行们] of 口们)
+      身.append(...口卡(项目, 全名, 行们));
+    区.appendChild(el("div", { 类: "表框外" }, el("div", { 类: "表框" }, 表)));
+    筐.appendChild(区);
+    接列宽(表, "aibase-功能表");
+  }
+  const 接页 = el("div", { 类: "功能页", "data-项目": 接新软件页 }, 加功能那一块(false));
+  筐.appendChild(接页);
+  刷粘贴钮();
+}
+function 档显示名(f, 全名) {
+  const 尾 = f.功能名.startsWith(全名 + " · ") ? f.功能名.slice(全名.length + 3) : f.功能名;
+  return 尾.includes("/") ? f.主用供应商 + "/" + f.主用模型 : 尾;
+}
+function 口卡(项目, 全名, 行们) {
+  const 口名 = 全名 === 项目 ? 全名 : 全名.slice(项目.length + 3);
+  const 主 = 行们.find((f) => f.功能名 === 全名);
+  const 顶 = 主 || 行们[0];
+  const 其余 = 行们.filter((f) => f !== 顶);
+  const 顶名 = 主 ? 口名 : 口名 + " · " + 档显示名(顶, 全名);
+  const 荐 = (状态.本机建议 || {})[全名];
+  const 荐条 = 荐 ? el("div", { 类: "荐" + (荐.警 ? " 警" : ""), title: 荐.解, 文: 荐.话 }) : null;
+  const 备选块 = el("div", { 类: "区 备 open" });
+  const 肉 = el("div", { 类: "区肉" });
+  肉.appendChild(el("div", { 类: "备头" }, el("span", {
+    类: "区名",
+    title: "同一件功能可以先备好几个模型(连这一行本身算在内,最多 " + 状态.预设上限 + " 个)。" + "首选拨不动(429 / 5xx / 连不上 / 超时)时,底座顺着下面开着的那几行按序号往下试;" + "密钥没填、没点开启、模型名写错这类当场报错,不往下试。在这儿加、在这儿删。",
+    文: "备选模型 " + 行们.length + "/" + 状态.预设上限
+  }), el("span", { 类: "态 待", 文: 主 ? "首选拨不动时按顺序往下试" : "这条口没有首选那一行,不会自动往下试" }), 复整组钮(全名, 顶, 其余)));
+  整组粘法.set(顶.功能名, (回执, 钮) => 粘整组(全名, 顶, 其余, 回执, 钮));
+  const 表 = 首备表(全名, 主, 顶, 其余);
+  肉.appendChild(表.节点);
+  肉.appendChild(添加备选块(全名, 顶, 行们.length));
+  备选块.appendChild(肉);
+  return 摆功能行(顶, 顶名, 行们.length - 1, 荐条, 备选块, 表.首格, 项目 + " › " + 顶名);
+}
+function 复整组钮(全名, 顶, 其余) {
+  const 钮 = el("button", {
+    类: "mini",
+    文: "⧉ 复制整组",
+    title: "把这条功能的首选和全部备选(每行的供应商、模型、推理强度、启用)按顺序一起记下来," + "然后到别的功能那行点「粘贴整组」,整套换过去。备注不跟着走。记在这台浏览器里,刷新不丢。"
+  });
+  钮.addEventListener("click", (e) => {
+    e.stopPropagation();
+    记剪贴({
+      整组: true,
+      功能名: 全名,
+      种类: 顶.种类 || "文本",
+      行: [顶, ...其余].map((f) => ({
+        供应商: f.主用供应商,
+        模型: f.主用模型,
+        用力: f.用力 || 关档,
+        启用: f.启用 !== false
+      }))
+    });
+  });
+  return 钮;
+}
+const 整组粘法 = new Map;
+async function 粘整组(全名, 顶, 其余, 回执, 钮) {
+  const 源 = 剪贴;
+  if (!源 || !源.整组)
+    return;
+  const 是图 = (顶.种类 || "文本") === "生图";
+  const 目标 = [顶, ...其余];
+  const 列 = (行们) => 行们.map((x, i) => (i ? "备选 " + i : "首选") + ":" + 设定字(x.主用供应商 || x.供应商, x.主用模型 || x.模型, 是图 ? "" : x.用力 || 关档)).join(`
+`);
+  if (!await 问改("「" + 全名 + "」整组换成「" + 源.功能名 + "」那一组?", `现在:
+` + 列(目标) + `
+会换成:
+` + 列(源.行) + (目标.length > 源.行.length ? `
+多出来的行只取消启用、不删。` : ""), "粘贴整组"))
+    return;
+  const 步 = async (话, 地址, 数据) => {
+    const 结 = await 打(地址, 数据);
+    if (!结.成了)
+      throw new Error(话 + "没成:" + (结.说 || 结.错 || "不知道为什么"));
+    return 结;
+  };
+  const 能放 = Math.min(源.行.length, Math.max(目标.length, 状态.预设上限));
+  const 放不下 = 源.行.length - 能放;
+  钮.disabled = true;
+  let 做了 = 0;
+  try {
+    for (let i = 0;i < 能放; i++) {
+      const s = 源.行[i];
+      const 第几 = i === 0 ? "首选" : "备选 " + i;
+      let 名;
+      if (i < 目标.length) {
+        名 = (await 步(第几 + "换模型", "/api/route", { 功能名: 目标[i].功能名, 供应商: s.供应商, 模型: s.模型 })).全名 || 目标[i].功能名;
+      } else {
+        名 = (await 步(第几 + "新加", "/api/addpreset", { 功能名: 全名, 供应商: s.供应商, 模型: s.模型, 显示名: "" })).全名;
+      }
+      if (!是图)
+        await 步(第几 + "推理强度", "/api/effort", { 功能名: 名, 用力: s.用力 || 关档 });
+      if (i >= 目标.length ? !s.启用 : s.启用 !== (目标[i].启用 !== false))
+        await 步(第几 + "启用", "/api/enable", { 功能名: 名, 开: s.启用 });
+      做了++;
+    }
+    let 停了 = 0;
+    for (const f of 目标.slice(能放)) {
+      if (f.启用 === false)
+        continue;
+      await 步("多出来那行停用", "/api/enable", { 功能名: f.功能名, 开: false });
+      停了++;
+    }
+    粘完的话 = { 功能名: 顶.功能名, 成: !放不下, 话: (放不下 ? "来源最后 " + 放不下 + " 个放不下(一条功能最多 " + 状态.预设上限 + " 个),没粘;" : "整组粘上了:") + 能放 + " 个模型照「" + 源.功能名 + "」的顺序换好" + (停了 ? ",原来多出的 " + 停了 + " 行取消了启用(没删)" : "") };
+  } catch (e) {
+    console.error(e);
+    粘完的话 = { 功能名: 顶.功能名, 成: false, 话: (e.message || "整组没粘完") + " —— 前 " + 做了 + " 行已经换好,点开这条功能看一眼再补" };
+  }
+  钮.disabled = false;
+  try {
+    await 装();
+  } catch (e) {
+    console.error(e);
+    报(回执, false, "整组粘完了但页面没刷新 —— 刷新一下");
+  }
+}
+function 拆控件(卡) {
+  const 控件行 = [...卡.querySelectorAll("div.行")].find((x) => [...x.children].some((y) => y.classList && y.classList.contains("对") && y.querySelector("label")?.textContent === "模型供应商"));
+  const 找对 = (字) => [...控件行.children].find((x) => x.classList && x.classList.contains("对") && x.querySelector("label")?.textContent === 字);
+  const 劲对 = 找对("推理强度");
+  const 按钮们 = [...控件行.querySelectorAll(":scope > button")];
+  const 启对 = [...控件行.children].find((x) => x.matches?.("label.对") && x.textContent.includes("启用"));
+  return {
+    家: 找对("模型供应商").querySelector("select"),
+    模: 找对("模型").querySelector("select"),
+    自框: [...控件行.children].find((x) => x.matches?.('input[placeholder="模型名"]')) || null,
+    劲: 劲对 ? 劲对.querySelector("select") : null,
+    强度自框: [...控件行.children].find((x) => x.matches?.('input[placeholder="强度值"]')) || null,
+    试: 按钮们.find((x) => x.textContent === "测试") || null,
+    复: 按钮们.find((x) => x.textContent === "复制") || null,
+    粘: 按钮们.find((x) => x.textContent.startsWith("粘贴")) || null,
+    启对,
+    启: 启对.querySelector('input[type="checkbox"]')
+  };
+}
+function 摆功能行(f, 显示名, 备选数, 荐条, 备选块, 首格, 路径) {
+  const 卡 = 造功能控件(f, 显示名, false, null, 荐条, 备选块);
+  const 冠 = 卡.querySelector(":scope > .冠");
+  const 肉 = 卡.querySelector(":scope > .肉");
+  const { 家, 模, 自框, 劲, 强度自框, 试, 复, 粘, 启对, 启 } = 拆控件(卡);
+  const 回执 = [...肉.children].find((x) => x.classList.contains("回执"));
+  const 图位 = 回执 ? 回执.nextElementSibling : null;
+  const 备注 = 冠.querySelector(".备注框");
+  const 提示行 = [...肉.children].find((x) => x.classList.contains("提示行"));
+  const 提示钮 = 提示行 ? 提示行.querySelector("button") : null;
+  const 提示盒 = [...肉.children].find((x) => x.classList.contains("提示盒"));
+  const 提示格 = el("div", { 类: "提示格" });
+  for (const x of [...肉.children]) {
+    if (x.classList.contains("态") && x.classList.contains("红"))
+      提示格.appendChild(x);
+  }
+  const 首况 = 近况(f.主用供应商, f.主用模型);
+  if (首况 && 首况.常败)
+    提示格.appendChild(el("span", {
+      类: "态 红",
+      title: "这个首选模型近 7 天软件真调了 " + 首况.次 + " 次,只成了 " + 首况.成 + " 次。常卡的话换一个,或在下面加备选让它挂了自己换。",
+      文: "⚠ 常失败 · " + 首况.话
+    }));
+  if (提示行) {
+    const 订阅 = [...提示行.children].find((x) => x.classList?.contains("态"));
+    if (订阅)
+      提示格.appendChild(订阅);
+  }
+  if (f.客户机密)
+    提示格.appendChild(机密违规名().has(f.功能名) ? el("span", {
+      类: "态 红",
+      文: "✗ 机密 · 首选不会拨",
+      title: "这一族带「敏感内容」标,只许用 Claude(本机 claude 命令行那一家)。首选现在指着「" + f.主用供应商 + "」,调用时会被跳过。把首选换成那一家的模型。"
+    }) : el("span", {
+      类: "态",
+      文: "\uD83D\uDD12 敏感内容 · 只许 Claude",
+      title: "这一族会把敏感内容送给模型,只许拨 Claude。" + "换成别家会被底座当场拒掉,自动换备选也只轮到 Claude 的行。这个标面板上不给改。"
+    }));
+  if (!提示格.children.length)
+    提示格.appendChild(el("span", { 文: "—" }));
+  const 名格 = el("td", { 类: "功能名格", title: f.说明 || f.功能名, 文: 显示名 || f.功能名 });
+  const 模格 = el("div", { 类: "行" }, 模, 自框);
+  够多就搜(模);
+  const 劲格 = 劲 ? el("div", { 类: "行" }, 劲, 强度自框) : el("span", { 文: "—" });
+  const 动 = el("span", { 类: "操作" }, 试, 复, 粘);
+  const 格们 = [
+    el("td", {}, 家),
+    el("td", {}, 模格),
+    el("td", {}, 劲格),
+    el("td", { 类: "数值", 文: String(备选数) }),
+    el("td", {}, 启对),
+    el("td", {}, 提示格),
+    el("td", {}, 动)
+  ];
+  const 主 = el("tr", { 类: "主行" + (f.启用 === false ? " 关" : "") }, el("td", { 类: "号格", 文: f.ID || "—" }), 名格, ...格们, el("td", {}, el("span", { 类: "箭", 文: "▸" })));
+  const 回行 = el("tr", { 类: "回执行" }, el("td", { colspan: "10" }, 回执, 图位));
+  const 详情 = el("div", { 类: "功能详情" });
+  详情.appendChild(el("div", { 类: "说明全文", 文: f.说明 || "暂无说明。" }));
+  详情.appendChild(el("div", { 类: "行" }, el("label", { 文: "备注" }), 备注));
+  if (!f.父功能) {
+    const 并 = el("input", {
+      类: "并框",
+      type: "number",
+      min: "1",
+      max: "64",
+      step: "1",
+      inputmode: "numeric",
+      value: f.同时 == null ? "" : String(f.同时),
+      placeholder: "没设",
+      "aria-label": "同时跑几个",
+      title: "别的软件批量用这条功能时(比如一键补全一整批),同时发几个出去。" + "1~64;清空 = 没设,那个软件照它自己原来的数跑。底座不拦超出的,只是告诉软件该开几路。"
+    });
+    并.addEventListener("change", async () => {
+      并.disabled = true;
+      try {
+        const 结 = await 打("/api/concurrency", { 功能名: f.功能名, 同时: 并.value.trim() });
+        if (结.成了) {
+          f.同时 = 结.同时;
+          并.value = 结.同时 == null ? "" : String(结.同时);
+        } else
+          并.value = f.同时 == null ? "" : String(f.同时);
+        报(回执, 结.成了, 结.成了 ? 结.说 : "没存上:" + (结.说 || 结.错 || "不知道为什么"));
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "同时跑几个未保存 —— 过一会儿再试");
+      } finally {
+        并.disabled = false;
+      }
+    });
+    详情.appendChild(el("div", { 类: "行" }, el("label", { 文: "同时跑几个", title: "批量时同时发几个(别的软件读这一格)" }), 并));
+  }
+  const 详情动作 = el("div", { 类: "行 详情动作" }, 提示钮);
+  if (详情动作.children.length)
+    详情.appendChild(详情动作);
+  if (提示盒)
+    详情.appendChild(提示盒);
+  if (荐条)
+    详情.appendChild(荐条);
+  if (备选块)
+    详情.appendChild(备选块);
+  const 键 = "功能:" + f.功能名;
+  const 收着 = 读折()[键] === undefined ? true : !!读折()[键];
+  const 展 = el("tr", { 类: "展行", hidden: 收着 }, el("td", { colspan: "10" }, 详情));
+  const 摊平 = (开) => {
+    主.classList.toggle("开", 开);
+    if (!首格)
+      return;
+    名格.colSpan = 开 ? 8 : 1;
+    名格.textContent = 开 ? "✎ 正在改:" + 路径 : 显示名 || f.功能名;
+    for (const x of 格们)
+      x.hidden = 开;
+    const 对 = [
+      [首格.家, 家, 0],
+      [首格.模, 模格, 1],
+      [首格.劲, 劲格, 2],
+      [首格.启, 启对, 4],
+      [首格.态, 提示格, 5],
+      [首格.试, 动, 6]
+    ];
+    for (const [新, 物, 回] of 对)
+      if (物)
+        (开 ? 新 : 格们[回]).appendChild(物);
+  };
+  摊平(!收着);
+  主.addEventListener("click", (e) => {
+    if (e.target.closest("button,input,select,a,label"))
+      return;
+    展.hidden = !展.hidden;
+    摊平(!展.hidden);
+    记折(键, 展.hidden);
+  });
+  启.addEventListener("change", () => requestAnimationFrame(() => 主.classList.toggle("关", !启.checked)));
+  return [主, 回行, 展];
+}
+function 首备表(全名, 主, 顶, 其余) {
+  const 表 = el("table", { 类: "备表" });
+  const 首选种类 = 主 ? 主.种类 || "文本" : "";
+  const 共 = 其余.length;
+  const 挪钮 = (f, 向, 回执) => {
+    const 钮 = el("button", {
+      类: "mini",
+      文: 向 === "上" ? "↑" : "↓",
+      title: 向 === "上" ? "跟上一行对调:这一行现在拨着的供应商、模型、推理强度换到上一行,上一行的换下来。两行名字都不动。按错了点反方向换回来。" : "跟下一行对调:这一行现在拨着的供应商、模型、推理强度换到下一行,下一行的换上来。两行名字都不动。按错了点反方向换回来。"
+    });
+    钮.addEventListener("click", () => 挪一格(钮, f, 向, 回执));
+    return 钮;
+  };
+  const 头行 = el("tr", {}, el("th", { "data-列": "ID", title: "这一行功能的编号:建的时候程序发的,改名、挪先后都不变;删掉的号不再发。", 文: "ID" }), ...["顺序", "供应商", "模型", "推理强度", "启用", "状态", "操作"].map((字) => el("th", { "data-列": 字, 文: 字 })));
+  表.appendChild(el("thead", {}, 头行));
+  const 身 = 表.appendChild(el("tbody"));
+  const 首回执 = el("div", { 类: "回执" });
+  if (备选完的话 && 备选完的话.挪 === 顶.功能名) {
+    报(首回执, 备选完的话.成, 备选完的话.话);
+    备选完的话 = null;
+  }
+  const 首格 = { 家: el("td"), 模: el("td"), 劲: el("td"), 启: el("td"), 态: el("td"), 试: el("span") };
+  身.append(el("tr", { 类: "备行 首" }, el("td", { 类: "号格", 文: 顶.ID || "—" }), el("td", { 类: "序", title: "这一行是接入的软件报的那个名字「" + 顶.功能名 + "」,每次先打它。", 文: "首选" }), 首格.家, 首格.模, 首格.劲, 首格.启, 首格.态, el("td", {}, el("div", { 类: "操作" }, 共 ? 挪钮(顶, "下", 首回执) : null, 首格.试))), el("tr", { 类: "备回" }, el("td", { colspan: "8" }, 首回执)));
+  其余.forEach((f, i) => {
+    const 显示名 = 档显示名(f, 全名);
+    const 那家 = 找家(f.主用供应商);
+    const 是图 = f.种类 === "生图";
+    const 开着 = f.启用 !== false;
+    const 同种 = (f.种类 || "文本") === 首选种类;
+    const 回执 = el("div", { 类: "回执" });
+    const 图位 = el("div");
+    const 卡 = 造功能控件(f, 显示名, true, { 回执, 图位 });
+    const 件 = 拆控件(卡);
+    const 拨不动 = 那家 ? f.拨不动理由 || "" : "库里没有「" + f.主用供应商 + "」这一家了";
+    const 态 = 机密违规名().has(f.功能名) ? el("span", {
+      类: "态 红",
+      文: "✗ 机密 · 不轮到",
+      title: "这一族带「敏感内容」标,只许用 Claude。这一行拨的是「" + f.主用供应商 + "」,底座调用时一律跳过它。删掉这一行,或改拨 Claude 那一家。"
+    }) : !开着 ? el("span", {
+      类: "态 待",
+      文: "未启用 · 不轮到",
+      title: "取消了「启用」勾:别的软件那边看不见它,首选拨不动时也不会轮到它。把这一行的勾打上就回来。"
+    }) : 拨不动 ? el("span", {
+      类: "态 红",
+      文: "✗ " + 短话(拨不动, 14),
+      title: "这一档现在指着「" + f.主用供应商 + "」," + 拨不动 + "。轮到它也会失败。" + "在这一行的供应商下拉框里改拨给别家;或者到上面「模型供应商」那一块把那家配好。"
+    }) : !主 ? el("span", {
+      类: "态 待",
+      文: "不自动轮到",
+      title: "这条功能库里没有首选那一行(接入的软件直接点名某一档),首选拨不动时不会自动往下试。"
+    }) : !同种 ? el("span", {
+      类: "态 待",
+      文: "种类不同 · 不轮到",
+      title: "这一档要的东西(文本 / 图像)跟首选不一样。底座往下试只挑同种类的,不会轮到它。"
+    }) : 那家 && 那家.吃订阅 ? el("span", {
+      类: "态 琥",
+      文: "⚠ 烧订阅",
+      title: "「" + 那家.名 + "」烧的是你账号里已经买过的订阅额度,账号有被限流甚至封号的风险。轮到它一次就烧一次。"
+    }) : el("span", { 文: "—" });
+    const 试 = el("button", { 类: "mini", title: 试悬浮(是图), 文: "测试" });
+    试.addEventListener("click", () => 试一次(试, f, 是图, 回执, 图位));
+    const 删 = el("button", {
+      类: "mini 红边",
+      文: "删除",
+      title: "把这个备选模型从库里去掉。删完接入的软件那边的下拉框会少这一项。删掉不能撤销。"
+    });
+    删.addEventListener("click", () => 删这一档(删, f, 回执));
+    if (备选完的话 && 备选完的话.挪 === f.功能名) {
+      报(回执, 备选完的话.成, 备选完的话.话);
+      备选完的话 = null;
+    }
+    const 序格 = el("td", { 类: "序", title: "库里这一行的全名:" + f.功能名 }, el("span", { 文: "备选 " + (i + 1) }), 显示名.includes("/") ? null : el("small", { 文: 显示名 }));
+    身.append(el("tr", { 类: "备行" + (开着 ? "" : " 关") }, el("td", { 类: "号格", 文: f.ID || "—" }), 序格, el("td", {}, 件.家), el("td", {}, 够多就搜.挂(el("div", { 类: "行" }, 件.模, 件.自框), 件.模)), el("td", {}, 件.劲 ? el("div", { 类: "行" }, 件.劲, 件.强度自框) : el("span", { 文: "—" })), el("td", {}, 件.启对), el("td", {}, 态), el("td", {}, el("div", { 类: "操作" }, 挪钮(f, "上", 回执), i < 共 - 1 ? 挪钮(f, "下", 回执) : null, 试, 件.复, 件.粘, 删))), el("tr", { 类: "备回" }, el("td", { colspan: "8" }, 回执, 图位)));
+  });
+  接列宽(表, "aibase-备表");
+  return { 节点: el("div", { 类: "滚" }, 表), 首格 };
+}
+let 备选完的话 = null;
+let 粘完的话 = null;
+const 剪贴键 = "ai-base:剪贴";
+let 剪贴 = (() => {
+  try {
+    return JSON.parse(localStorage.getItem(剪贴键) || "null");
+  } catch {
+    return null;
+  }
+})();
+function 记剪贴(新) {
+  剪贴 = 新;
+  try {
+    新 ? localStorage.setItem(剪贴键, JSON.stringify(新)) : localStorage.removeItem(剪贴键);
+  } catch {}
+  刷粘贴钮();
+}
+const 粘贴钮们 = [];
+let 剪贴条 = null;
+function 刷剪贴条() {
+  if (!剪贴条) {
+    const 字 = el("span", { 类: "剪贴字" });
+    const 清 = el("button", {
+      类: "mini",
+      文: "清空",
+      title: "不粘了,把手里这一套扔掉。各行的「粘贴」钮跟着收起来。"
+    });
+    清.addEventListener("click", () => 记剪贴(null));
+    剪贴条 = el("div", { 类: "剪贴条", hidden: true }, 字, 清);
+    document.body.appendChild(剪贴条);
+  }
+  剪贴条.hidden = !剪贴;
+  if (!剪贴)
+    return;
+  const 字 = 剪贴条.querySelector(".剪贴字");
+  if (剪贴.整组) {
+    字.textContent = "已复制整组 " + 短话(剪贴.功能名, 16) + "(" + 剪贴.行.length + " 个模型)";
+    字.title = "手里是「" + 剪贴.功能名 + "」从上到下 " + 剪贴.行.length + " 行:" + 剪贴.行.map((x, i) => (i ? "备选 " + i : "首选") + " " + x.供应商 + "/" + x.模型 + (x.启用 ? "" : "(未启用)")).join(";") + "。到别的功能那行点「粘贴整组」整套换过去;只能粘到同种类(文本 / 生图)的功能上。";
+    return;
+  }
+  字.textContent = "已复制 " + 短话(剪贴.供应商 + "/" + 剪贴.模型, 22);
+  字.title = "手里这一套:供应商 " + 剪贴.供应商 + ",模型 " + 剪贴.模型 + (剪贴.种类 === "生图" ? "" : ",推理强度 " + (剪贴.用力 || 关档)) + "。来自「" + 剪贴.功能名 + "」。到别的功能那行点「粘贴」换掉它的首选," + "或点开一条功能、在备选那块点「粘成备选」。只能粘到同种类(文本 / 生图)的功能上。";
+}
+function 刷粘贴钮() {
+  刷剪贴条();
+  for (const { 钮, f, 刷 } of 粘贴钮们) {
+    if (刷) {
+      刷();
+      continue;
+    }
+    const 能粘 = 剪贴 && 剪贴.种类 === (f.种类 || "文本") && (剪贴.整组 ? 整组粘法.has(f.功能名) && 剪贴.功能名 !== (f.父功能 || f.功能名) : 剪贴.功能名 !== f.功能名);
+    钮.hidden = !能粘;
+    if (能粘 && 剪贴.整组) {
+      钮.textContent = "粘贴整组";
+      钮.title = "把复制来的「" + 剪贴.功能名 + "」那一整组(" + 剪贴.行.length + " 个模型)按顺序换到这条功能上:" + "一行对一行改供应商、模型、推理强度、启用;不够的在底下补备选,多出来的只取消启用、不删。" + "行名和备注不动。按下去先问一句(写清换成什么),点「粘贴整组」才存。";
+    } else if (能粘) {
+      钮.textContent = "粘贴";
+      钮.title = "把复制来的这一套按到这一行上:供应商 → " + 剪贴.供应商 + ",模型 → " + 剪贴.模型 + ",推理强度 → " + (剪贴.用力 || 关档) + "。来源是「" + 剪贴.功能名 + "」。按下去先问一句(写清旧→新),确认了才存 —— " + "按错了在这一行的下拉框里改回来就行。";
+    }
+  }
+}
+function 添加备选块(族名, 顶, 现有条数) {
+  const 筐 = el("div", {});
+  const 回执 = el("div", { 类: "回执" });
+  if (备选完的话 && 备选完的话.族名 === 族名) {
+    报(回执, 备选完的话.成, 备选完的话.话);
+    备选完的话 = null;
+  }
+  if (现有条数 >= 状态.预设上限) {
+    筐.appendChild(el("div", {
+      类: "态",
+      title: "上限是 " + 状态.预设上限 + " 个(连最上面那一行一起数)。定这个数是因为这些模型会摆到" + "接入的软件那个下拉框里,摆多了那边没法看。要换别的,先在上面点一行的「删除」。",
+      文: "已满 " + 状态.预设上限 + " 个,要换先删一个"
+    }));
+    筐.appendChild(回执);
+    return 筐;
+  }
+  const 表 = el("div", { hidden: true });
+  const 开 = el("button", {
+    类: "mini",
+    title: "给这件功能再备一个模型。备好之后,接入的软件在它自己的设置里就能在这几个之间切。",
+    文: "＋ 添加备选模型"
+  });
+  const 名 = el("input", {
+    type: "text",
+    placeholder: "留空 = 屏上就显示它拨着的那一家那个模型",
+    title: "给这个备选模型起个你自己看得懂的名字,比如「更会写但慢」。" + "留空的话,屏上显示的就是它现在拨着的「模型供应商/模型」—— 而且**跟着改**:" + "以后在这一行把模型换了,屏上那行字自动跟着换(自己起过名字的就一直用你起的那个)。"
+  });
+  const 家 = el("select", { title: "这个备选模型用哪一家。" });
+  for (const x of 状态.供应商) {
+    家.appendChild(el("option", { value: x.名, selected: x.名 === 顶.主用供应商, 文: x.名 }));
+  }
+  const 自框 = el("input", {
+    type: "text",
+    hidden: true,
+    placeholder: "模型名",
+    title: "清单里没有的模型名填在这儿。"
+  });
+  const 模 = el("select", { title: "用这一家的哪个模型。" });
+  const 画模 = () => {
+    const 那家 = 状态.供应商.find((x) => x.名 === 家.value);
+    画模型选项(模, 那家, 那家 && 那家.模型们[0] || "", 自框);
+  };
+  画模();
+  家.addEventListener("change", 画模);
+  模.addEventListener("change", () => {
+    自框.hidden = 模.value !== 自定义;
+  });
+  const 拦 = UI没存拦(表);
+  const 收 = () => {
+    表.hidden = true;
+    开.hidden = false;
+    名.value = "";
+    UI填错.清全(表);
+    拦.存了();
+  };
+  开.addEventListener("click", () => {
+    表.hidden = false;
+    开.hidden = true;
+    名.focus();
+  });
+  const 存 = el("button", { 类: "主钮", title: "存进本机的配置库。", 文: "保存" });
+  存.addEventListener("click", async () => {
+    const 模型 = 模.value === 自定义 ? 自框.value.trim() : 模.value;
+    if (!UI填错.查([{
+      框: 模.value === 自定义 ? 自框 : 模,
+      话: "还没选模型,清单里没有就在右边框里手填",
+      判: () => !!模型
+    }]))
+      return;
+    存.disabled = true;
+    try {
+      const 结 = await 打("/api/addpreset", {
+        功能名: 族名,
+        供应商: 家.value,
+        模型,
+        显示名: 名.value.trim()
+      });
+      if (!结.成了) {
+        报(回执, false, 结.说 || 结.错 || "没加上");
+        return;
+      }
+      备选完的话 = { 族名, 成: true, 话: 结.说 };
+      收();
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "备选模型未添加 —— 检查填写后再试");
+    } finally {
+      存.disabled = false;
+    }
+  });
+  const 撤 = el("button", { 类: "mini", title: "不加了,把这个表单收起来。", 文: "取消" });
+  撤.addEventListener("click", async () => {
+    if (!await 拦.问())
+      return;
+    备选完的话 = null;
+    收();
+    回执.textContent = "";
+  });
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, el("label", { 文: "名称" }), 名)));
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, el("label", { 文: "模型供应商" }), 家), el("span", { 类: "对" }, 必标("模型"), 模), 自框));
+  够多就搜(模);
+  表.appendChild(el("div", { 类: "行" }, 存, 撤));
+  const 顶种类 = 顶.种类 || "文本";
+  const 粘备 = el("button", { 类: "mini", hidden: true, 文: "＋ 粘成备选" });
+  粘贴钮们.push({ 钮: 粘备, 刷: () => {
+    粘备.hidden = !(剪贴 && !剪贴.整组 && 剪贴.种类 === 顶种类);
+    if (!粘备.hidden)
+      粘备.title = "把复制来的那一套(" + 剪贴.供应商 + "/" + 剪贴.模型 + ")挂成这条功能的一个新备选。首选不动。按下去立刻存;不要了在那一行点「删除」。";
+  } });
+  粘备.addEventListener("click", async () => {
+    const 源 = 剪贴 && { ...剪贴 };
+    if (!源)
+      return;
+    粘备.disabled = true;
+    try {
+      const 结 = await 打("/api/addpreset", { 功能名: 族名, 供应商: 源.供应商, 模型: 源.模型, 显示名: "" });
+      if (!结.成了) {
+        报(回执, false, "没粘上:" + (结.说 || 结.错 || "不知道为什么"));
+        return;
+      }
+      let 话 = "粘成备选了:" + 源.供应商 + "/" + 源.模型, 成 = true;
+      if (顶种类 !== "生图") {
+        const 劲结 = await 打("/api/effort", { 功能名: 结.全名, 用力: 源.用力 || 关档 });
+        if (劲结.成了)
+          话 += ",推理强度 " + (源.用力 || 关档);
+        else {
+          成 = false;
+          话 = "推理强度没跟过来,去新那一行手动选一次;备选已经加上了:" + 源.供应商 + "/" + 源.模型;
+        }
+      }
+      备选完的话 = { 族名, 成, 话 };
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "备选未粘上 —— 过一会儿再试");
+    } finally {
+      粘备.disabled = false;
+    }
+  });
+  开.addEventListener("click", () => {
+    粘备.hidden = true;
+  });
+  撤.addEventListener("click", () => 刷粘贴钮());
+  筐.appendChild(el("div", { 类: "行" }, 开, 粘备));
+  筐.appendChild(表);
+  筐.appendChild(回执);
+  return 筐;
+}
+function 试悬浮(是图) {
+  return 是图 ? "拿这一行现在的设置真画一张图,当场知道通不通。一次约 20 秒," + "会真的用掉你 ChatGPT 账号里的一次生图次数,不是模拟。" : "拿这一行现在的设置真发一次请求,当场知道通不通。会花掉一点额度或钱。";
+}
+async function 试一次(钮, f, 是图, 回执, 图位) {
+  图位.textContent = "";
+  回执.textContent = "";
+  回执.className = "回执";
+  回执.title = "";
+  let 没通 = null;
+  try {
+    const 结 = await UI调用.跑(钮, {
+      动作: 是图 ? "画图" : "测试",
+      行位: 图位,
+      位置: "调用设置 · " + f.功能名
+    }, async () => {
+      const 结 = await 打("/api/try", { 功能名: f.功能名 });
+      if (!结.成了) {
+        没通 = { 说: 结.说 || "没通", 详: 结.详 || "" };
+        throw new Error(结.原文 || 结.说 || "没通");
+      }
+      return 结;
+    });
+    报(回执, true, "通了:" + 结.说);
+    if (结.图) {
+      const 网址 = "data:" + (结.格式 || "image/png") + ";base64," + 结.图;
+      图位.appendChild(el("a", {
+        href: 网址,
+        "data-看图": "",
+        title: "点开看大图。这张图:" + (结.详 || "")
+      }, el("img", {
+        类: "出图",
+        src: 网址,
+        alt: "刚画出来的那张图"
+      })));
+    }
+  } catch (e) {
+    if (e && e.不等了)
+      return;
+    if (没通) {
+      报(回执, false, "没通:" + 没通.说);
+      回执.title = 没通.详 || "原因点上面那行的「⧉ 复制报错」,粘给 AI 看";
+    } else {
+      console.error(e);
+      报(回执, false, "测试未完成 —— 检查设置后再试");
+    }
+  } finally {
+    await 刷日志();
+  }
+}
+async function 挪一格(钮, f, 向, 回执) {
+  钮.disabled = true;
+  try {
+    const 结 = await 打("/api/move", { 功能名: f.功能名, 方向: 向 });
+    if (!结.成了) {
+      报(回执, false, 结.说 || 结.错 || "没挪动");
+      return;
+    }
+    const 族名 = f.父功能 || f.功能名;
+    备选完的话 = { 族名, 成: true, 话: 结.说, 挪: 结.换到 };
+    await 装();
+  } catch (e) {
+    console.error(e);
+    报(回执, false, "顺序未调整 —— 过一会儿再试");
+  } finally {
+    钮.disabled = false;
+  }
+}
+async function 删这一档(钮, f, 回执) {
+  if (!await UI确认({
+    题: "删掉备选模型「" + (f.供应商 || "?") + " / " + (f.模型 || "?") + "」?",
+    说: "删的是「" + f.功能名 + `」这一档,删完接入的软件那边就选不到它了,收不回。
+` + "只是暂时不想让那边看见的话,点开这一行、取消「启用」勾就行 —— 那个随时收得回。",
+    钮字: "删除"
+  }))
+    return;
+  钮.disabled = true;
+  try {
+    const 结 = await 打("/api/delfeature", { 功能名: f.功能名 });
+    if (!结.成了) {
+      报(回执, false, 结.说 || 结.错 || "没删掉");
+      return;
+    }
+    备选完的话 = { 族名: f.父功能 || f.功能名, 成: true, 话: 结.说 };
+    await 装();
+  } catch (e) {
+    console.error(e);
+    报(回执, false, "备选模型未删除 —— 刷新后再试");
+  } finally {
+    钮.disabled = false;
+  }
+}
+function 造功能控件(f, 显示名, 是备选, 共用, ...额外) {
+  {
+    const 是图 = f.种类 === "生图";
+    const 卡 = el("div", { 类: "卡" });
+    let 坏 = false;
+    const 卡头 = el("div", { 类: "卡头" }, el("span", { 类: "功名", title: "库里这一行的全名:" + f.功能名, 文: 显示名 || f.功能名 }), !是图 ? null : el("span", {
+      类: "tag t灰",
+      title: "这一行问 AI 要的是一张图片,软件拿走的是图片文件本身。库里的种类叫「生图」。",
+      文: "图像"
+    }), f.说明 ? el("span", { 类: "说", title: f.说明, 文: f.说明 }) : null);
+    卡.appendChild(卡头);
+    const 回执 = 共用 ? 共用.回执 : el("div", { 类: "回执" });
+    if (粘完的话 && 粘完的话.功能名 === f.功能名) {
+      报(回执, 粘完的话.成, 粘完的话.话);
+      粘完的话 = null;
+    }
+    const 图位 = 共用 ? 共用.图位 : el("div");
+    const 家 = el("select", { title: "这个功能交给哪一家去做。改完自动存。" });
+    for (const s of 状态.供应商) {
+      const 好 = s.本机可用;
+      const 理由 = s.拨不动理由;
+      家.appendChild(el("option", {
+        value: s.名,
+        disabled: !好 && s.名 !== f.主用供应商,
+        selected: s.名 === f.主用供应商,
+        title: !理由 ? "" : 理由 + (好 ? "" : "(" + s.地址 + ")") + (好 ? "。选了也拨不动,先到上面「模型供应商」那一块把它配好。" : "。选不了。"),
+        文: s.名 + (理由 ? "(" + 理由 + ")" : "")
+      }));
+    }
+    const 那家 = 状态.供应商.find((x) => x.名 === f.主用供应商);
+    const 模 = el("select", { title: "用这一家的哪个模型。清单里没有的,选最后那一项手动填。" });
+    const 自框 = el("input", {
+      type: "text",
+      hidden: true,
+      placeholder: "模型名",
+      title: "清单里没有的模型名填在这儿,填完按回车。填错了那次调用会失败,底下记录里看得到。"
+    });
+    画模型选项(模, 那家, f.主用模型, 自框);
+    const 问换 = async (新模型) => {
+      if (await 问改("「" + (显示名 || f.功能名) + "」换成 " + 设定字(家.value, 新模型) + "?", "现在是 " + 设定字(f.主用供应商, f.主用模型) + ",换完接入的软件下一次调用就按新的走。", "换"))
+        return true;
+      家.value = f.主用供应商;
+      画模型选项(模, 那家, f.主用模型, 自框);
+      自框.hidden = true;
+      return false;
+    };
+    const 存 = async (新模型) => {
+      if (!await 问换(新模型))
+        return;
+      const 结 = await 打("/api/route", { 功能名: f.功能名, 供应商: 家.value, 模型: 新模型 });
+      报(回执, 结.成了, 结.成了 ? "已保存" : "供应商和模型未保存:" + (结.说 || 结.错 || "不知道为什么"));
+      if (结.成了)
+        await 装();
+    };
+    家.addEventListener("change", async () => {
+      const 新家 = 状态.供应商.find((x) => x.名 === 家.value);
+      const 新笔 = new Map((新家 && 新家.模型笔记 || []).map((x) => [x.模型, x]));
+      const 新模 = (新家 && 新家.模型们 || []).find((m) => !选不了(新家, m, 新笔.get(m))) || "";
+      画模型选项(模, 新家, 新模, 自框);
+      if (!新模) {
+        自框.focus();
+        报(回执, false, 新家 && 新家.模型们.length ? "这一家清单里的模型都选不了,在右边框里手动填一个模型名再按回车" : "这一家还没有模型清单,在右边框里手动填一个模型名再按回车");
+        return;
+      }
+      try {
+        await 存(新模);
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "供应商和模型未保存 —— 过一会儿再试");
+      }
+    });
+    模.addEventListener("change", async () => {
+      if (模.value === 自定义) {
+        自框.hidden = false;
+        自框.focus();
+        return;
+      }
+      自框.hidden = true;
+      try {
+        await 存(模.value);
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "供应商和模型未保存 —— 过一会儿再试");
+      }
+    });
+    自框.addEventListener("change", async () => {
+      const v = 自框.value.trim();
+      if (!UI填错.查([{ 框: 自框, 话: "没填模型名,没有改动" }]))
+        return;
+      try {
+        await 存(v);
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "供应商和模型未保存 —— 过一会儿再试");
+      }
+    });
+    const 试 = 是备选 ? null : el("button", { 类: "mini", title: 试悬浮(是图), 文: "测试" });
+    if (试)
+      试.addEventListener("click", () => 试一次(试, f, 是图, 回执, 图位));
+    const 强度自框 = el("input", {
+      type: "text",
+      hidden: true,
+      placeholder: "强度值",
+      title: "这一家清单里没有的写法填在这儿,填完按回车。填错了那次调用会失败,底下记录里看得到。"
+    });
+    const 劲 = el("select", {
+      title: "「关闭」= 让它尽量别想、直接答:快、省额度,也是出厂值。" + "有真开关的家(DeepSeek、claude 命令行)是真关掉;别家没有真开关," + "底座就把这家能压到的最低那一档发过去 —— 下面那行写着这家属于哪一种。" + "其余几项是这一家原厂认的强度值,越往上想得越久、花的额度越多," + "难一点的活可能答得更稳。改完立刻生效,下一次调用就按新的这个值。"
+    });
+    const 档情 = 那家 && 那家.模型档位 && 那家.模型档位[f.主用模型] || null;
+    const 没这格 = !!档情 && 档情.来源 === "不吃这一格";
+    画强度选项(劲, (档情 ? 档情.档们 : 那家 && 那家.强度档) || [], f.用力 || 关档, 强度自框, !!档情 && 档情.来源 === "接口自报");
+    if (没这格) {
+      劲.disabled = true;
+      劲.title = "这个模型没有推理强度这一格:底座拿一个写错的值试过,它照收不误、一个字都不理" + "(连想了多少都不报)。所以这儿点什么都一样,底座干脆一个字段都不发给它。" + "要调思考的多少,只能换一个模型。";
+    }
+    const 关法 = 档情 && 档情.关法 || 那家 && 那家.关法 || "";
+    const 关法牌 = el("div", {
+      类: "态",
+      hidden: (f.用力 || 关档) !== 关档 || !关法 || 没这格,
+      title: 关法 === "真关掉" ? "这家有真正的开关,点了「关闭」它就一个字都不想,省下来的全是你的额度。" : "这家没有「彻底不想」这个开关 —— 底座能做的是把它压到这家认的最低那一档(" + 关法.replace("最低档 ", "") + ")。它还是会想一些,只是比默认少。" + "Gemini 3 那几个模型尤其:2026-09-08 拿它自家的原生接口把思考预算设成 0," + "它照样想了 959 个 token —— 那是模型自己的脾气,换什么写法都一样。" + "到底想了多少,看下面那行「上次它想了 N 个字」,那是接口自己报的账。",
+      文: "ℹ 「关闭」在这家 = " + (关法 === "真关掉" ? "真关掉" : 关法 === "没这一格" ? "没这一格,一个字段都不发" : 关法.replace("最低档 ", "") + "(这家没有真的关)")
+    });
+    const 档来处 = (() => {
+      if (没这格)
+        return {
+          文: "ℹ 没这一格,用它自己的默认",
+          title: "底座拿一个写错的强度值试过这个模型,它没报错、照样回话 —— 说明它压根不看这一格。" + "所以这儿灰着,底座一个字段都不发给它 —— 它这一次想多久,由它自己的出厂默认定," + "底座既问不出那是多少、也改不动。要调思考多少,只能换一个模型。"
+        };
+      if (!档情 || 档情.来源 === "没探过")
+        return {
+          文: "⚠ 这几档还没探过,是候选值",
+          title: "上面这几档是按这一家的类型给的候选值,不是这个模型自己报的 —— 它可能多几档" + "(xhigh、max 点不到就是白丢能力),也可能压根没有这一格。" + "去「全部 N 个」那张模型表,在这个模型那一行点「探档位」,一次请求就问出来了。" + (档情 && 档情.过期 ? "(它上次探过,但那之后这一家的地址或模型名变了,旧记录不作数。)" : "")
+        };
+      if (档情.来源 === "探不出来")
+        return {
+          文: "⚠ 这几档没问出来,是候选值",
+          title: "问过这个模型认哪几档,但这一家没列出来(报的是权限错、或者只说「非法参数」)。" + "所以上面这几档是按这一家类型给的候选值,不是它自己报的 —— 挑的这一档它可能不认," + "那一次调用会被拒,底下记录里看得到。再点「探档位」多半还是这个结果。"
+        };
+      return null;
+    })();
+    const 档来处牌 = 档来处 ? el("div", { 类: "态", 文: 档来处.文, title: 档来处.title }) : el("div", { hidden: true });
+    const 劲提醒 = el("div", {
+      类: "态",
+      hidden: (f.用力 || 关档) === 关档 || 没这格,
+      title: "开了思考的模型会先输出一大段自己的推理,那部分照样花额度。" + "个别模型(DeepSeek 尤其)会把额度全花在想上、正文一个字都不剩 —— " + "回执里看到空的,先把这一格调回「关闭」再试。",
+      文: "⏱ 会慢一些、多花额度;回空就调回「关闭」"
+    });
+    let 实况 = 画想过(f.主用供应商, f.主用模型, f.用力 || 关档);
+    const 存强度 = async (值) => {
+      const 结 = await 打("/api/effort", { 功能名: f.功能名, 用力: 值 });
+      报(回执, 结.成了, 结.成了 ? 结.说 : 结.说 || 结.错 || "推理强度未保存");
+      if (结.成了) {
+        for (const x of 状态.功能)
+          if (x.功能名 === f.功能名)
+            x.用力 = 值;
+        现劲 = 值;
+        劲提醒.hidden = 值 === 关档;
+        关法牌.hidden = 值 !== 关档 || !关法 || 没这格;
+        const 新 = 画想过(f.主用供应商, f.主用模型, 值);
+        实况.replaceWith(新);
+        实况 = 新;
+        刷提示();
+      }
+    };
+    let 现劲 = f.用力 || 关档;
+    const 问劲 = async (值) => {
+      if (await 问改("推理强度从 " + 现劲 + " 改成 " + 值 + "?", "改的是「" + (显示名 || f.功能名) + "」这一行,下一次调用就按新的这个值。"))
+        return true;
+      劲.value = 现劲;
+      强度自框.hidden = true;
+      return false;
+    };
+    劲.addEventListener("change", async () => {
+      if (劲.value === 自定义) {
+        强度自框.hidden = false;
+        强度自框.focus();
+        return;
+      }
+      强度自框.hidden = true;
+      if (!await 问劲(劲.value))
+        return;
+      劲.disabled = true;
+      try {
+        await 存强度(劲.value);
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "推理强度未保存 —— 过一会儿再试");
+      } finally {
+        劲.disabled = false;
+      }
+    });
+    强度自框.addEventListener("change", async () => {
+      const v = 强度自框.value.trim();
+      if (!UI填错.查([{ 框: 强度自框, 话: "没填强度值,没有改动" }]))
+        return;
+      if (!await 问劲(v))
+        return;
+      try {
+        await 存强度(v);
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "推理强度未保存 —— 过一会儿再试");
+      }
+    });
+    const 复 = el("button", {
+      类: "mini",
+      title: "把这一行现在拨着的三样记下来(哪一家、哪个模型、推理强度多大)," + "然后到别的功能那一行上点「粘贴」。只记这三样,备注和「启用」勾不跟着走。" + "记在浏览器里,刷新这一页就没了。",
+      文: "复制"
+    });
+    const 粘 = el("button", { 类: "mini", hidden: true, 文: "粘贴" });
+    粘贴钮们.push({ 钮: 粘, f });
+    复.addEventListener("click", () => {
+      记剪贴({
+        功能名: f.功能名,
+        供应商: 家.value,
+        模型: 模.value === 自定义 ? 自框.value.trim() : 模.value,
+        用力: 是图 ? 关档 : 劲.value === 自定义 ? 强度自框.value.trim() : 劲.value,
+        种类: f.种类 || "文本"
+      });
+      报(回执, true, "已复制 —— 去别的功能那行点「粘贴」,或在备选那块点「粘成备选」");
+    });
+    粘.addEventListener("click", async () => {
+      const 源 = 剪贴 && { ...剪贴 };
+      if (!源)
+        return;
+      if (源.整组) {
+        const 法 = 整组粘法.get(f.功能名);
+        if (法)
+          await 法(回执, 粘);
+        return;
+      }
+      const 新劲 = 是图 ? "" : 源.用力 || 关档;
+      if (!await 问改("把「" + (显示名 || f.功能名) + "」换成复制来的设定?", 设定字(f.主用供应商, f.主用模型, 是图 ? "" : f.用力 || 关档) + `
+会换成
+` + 设定字(源.供应商, 源.模型, 新劲), "粘贴"))
+        return;
+      粘.disabled = true;
+      try {
+        const 结 = await 打("/api/route", { 功能名: f.功能名, 供应商: 源.供应商, 模型: 源.模型 });
+        if (!结.成了) {
+          报(回执, false, "没粘上:" + (结.说 || 结.错 || "不知道为什么"));
+          return;
+        }
+        const 现名 = 结.全名 || f.功能名;
+        let 话 = "粘上了:" + 源.供应商 + "/" + 源.模型, 成 = true;
+        if (!是图) {
+          const 劲结 = await 打("/api/effort", { 功能名: 现名, 用力: 源.用力 || 关档 });
+          if (劲结.成了)
+            话 += ",推理强度 " + (源.用力 || 关档);
+          else {
+            成 = false;
+            话 = "推理强度没跟过来(" + (劲结.说 || 劲结.错 || "不知道为什么") + "),去这一行的「推理强度」下拉框手动选一次;供应商 / 模型已经粘上了:" + 源.供应商 + "/" + 源.模型;
+          }
+        }
+        粘完的话 = { 功能名: 现名, 成, 话 };
+        await 装();
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "模型设定未粘贴 —— 过一会儿再试");
+      } finally {
+        粘.disabled = false;
+      }
+    });
+    const 启 = el("input", { type: "checkbox", checked: f.启用 !== false });
+    启.addEventListener("change", async () => {
+      启.disabled = true;
+      const 想要的 = 启.checked;
+      try {
+        const 结 = await 打("/api/enable", { 功能名: f.功能名, 开: 想要的 });
+        报(回执, 结.成了, 结.说);
+        if (!结.成了)
+          启.checked = !想要的;
+        else
+          for (const x of 状态.功能)
+            if (x.功能名 === f.功能名)
+              x.启用 = 想要的;
+        卡.classList.toggle("关", !启.checked);
+        if (结.成了 && 是备选) {
+          粘完的话 = { 功能名: f.功能名, 成: true, 话: 结.说 };
+          await 装();
+        }
+      } catch (e) {
+        启.checked = !想要的;
+        console.error(e);
+        报(回执, false, "启用开关未保存 —— 过一会儿再试");
+      } finally {
+        启.disabled = false;
+      }
+    });
+    const 启对 = el("label", {
+      类: "对",
+      title: "勾着 = 别的软件那边的模型下拉框里有这一项。取消勾 = 那边看不见它了," + "可这一行连同现在的设置原样留着,随时再勾回来。" + "跟本页最下面那张卡的「删掉」不一样 —— 删了收不回,关了随时开。"
+    }, 启, el("span", { 文: "启用" }));
+    const 备注 = el("input", {
+      类: "备注框",
+      type: "text",
+      value: f.备注 || "",
+      placeholder: "备注(写给自己看的)",
+      title: "你自己写给自己看的一句,底座不读它 —— 写什么都不影响拨号,改完按回车就存。" + "上面标题后面那句是「说明」(这条功能在哪个软件哪一屏被调),那句改代码的人维护、" + "这儿改不了;这个框才是你的。"
+    });
+    备注.addEventListener("change", async () => {
+      备注.disabled = true;
+      try {
+        const 结 = await 打("/api/note", { 功能名: f.功能名, 备注: 备注.value.trim() });
+        报(回执, 结.成了, 结.成了 ? "备注记下了" : "没记上:" + (结.说 || 结.错 || "不知道为什么"));
+      } catch (e) {
+        console.error(e);
+        报(回执, false, "功能备注未保存 —— 过一会儿再试");
+      } finally {
+        备注.disabled = false;
+      }
+    });
+    卡头.appendChild(备注);
+    卡.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, el("label", { 文: "模型供应商" }), 家), el("span", { 类: "对" }, el("label", { 文: "模型" }), 模), 自框, 是图 ? null : el("span", { 类: "对" }, el("label", { 文: "推理强度" }), 劲), 是图 ? null : 强度自框, 试, 复, 粘, 启对));
+    const 提示盒 = el("div", { 类: "提示盒" });
+    const 提示钮 = el("button", {
+      类: "mini",
+      title: "这一行推理强度的几句说明:这几档是探来的还是候选值、「关闭」在这家到底关不关得住、" + "上次真调用想了多少字。点开看,再点收起。"
+    });
+    const 提示键 = "提示:" + f.功能名;
+    提示盒.hidden = 读折()[提示键] !== false;
+    const 刷提示 = () => {
+      if (是图) {
+        提示钮.hidden = 提示盒.hidden = true;
+        return;
+      }
+      const 条 = [档来处牌, 关法牌, 劲提醒].filter((x) => !x.hidden).length + 实况.children.length;
+      提示钮.hidden = !条;
+      if (!条)
+        提示盒.hidden = true;
+      提示钮.textContent = (提示盒.hidden ? "▸" : "▾") + " 推理强度提示 " + 条 + " 条";
+    };
+    提示钮.addEventListener("click", () => {
+      提示盒.hidden = !提示盒.hidden;
+      记折(提示键, 提示盒.hidden);
+      刷提示();
+    });
+    if (!是图)
+      提示盒.append(档来处牌, 关法牌, 劲提醒, 实况);
+    刷提示();
+    const 拨不动 = 找家(f.主用供应商) ? f.拨不动理由 || "" : "库里没有「" + f.主用供应商 + "」这一家了";
+    if (拨不动) {
+      坏 = true;
+      卡.appendChild(el("div", {
+        类: "态 红",
+        title: "这一行现在指着「" + f.主用供应商 + "」," + 拨不动 + (那家 && !那家.本机可用 ? "(" + 那家.地址 + ")" : "") + "。保持这样的话,软件每次用这个功能都会失败。" + "到上面「模型供应商」那一块把它配好,或者在这一行的「模型供应商」下拉框里改拨给别家。",
+        文: "✗ " + 拨不动 + ",现在调用会失败"
+      }));
+    }
+    const 订阅句 = !(那家 && 那家.吃订阅) ? null : el("span", {
+      类: "态 琥",
+      title: "「" + 那家.名 + "」是拿你已经买过的订阅额度当接口用,不是服务商设计的用法," + "账号有被限流甚至封号的风险,出了事得你自己担。软件每跑一次这个功能就烧一次。" + "要完全没有这个风险,就把这一行改拨给按次付费的接口(在官网充值、拿一串 key 那种)。" + "非用不可的话,把风险压低三条:①页面最上面「环境 IP」查一下,要跟你平时开浏览器登录" + "这个账号的 IP 一致 ②那一家卡片里「调用频率上限」别设得太松 ③别拿它跑通宵批量。",
+      文: "⚠ 烧订阅额度,账号有封号风险"
+    });
+    卡.appendChild(el("div", { 类: "行 提示行" }, 订阅句, 提示钮));
+    卡.appendChild(提示盒);
+    if (是图 && 那家 && !像生图网址(那家.地址)) {
+      卡.appendChild(el("div", {
+        类: "态 红",
+        title: 生图网址解释(那家),
+        文: "✗ 这一家的网址不是生图网址,现在画图会失败"
+      }));
+    }
+    if (!共用) {
+      卡.appendChild(回执);
+      卡.appendChild(图位);
+    }
+    for (const 块 of 额外)
+      if (块)
+        卡.appendChild(块);
+    卡.classList.add(坏 ? "堵" : "素");
+    if (f.启用 === false)
+      卡.classList.add("关");
+    分层(卡, 是备选 ? "" : "功能:" + f.功能名);
+    return 卡;
+  }
+}
+function 像生图网址(地址) {
+  const a = (地址 || "").toLowerCase();
+  return a.includes("images") || a.includes("generatecontent");
+}
+function 生图网址解释(那家) {
+  return "要图的活得发去 …/v1/images/generations(OpenAI 那条)或 …:generateContent(谷歌那条)那样的网址," + "聊天发的是 …/v1/chat/completions。" + "「" + 那家.名 + "」现在填的是「" + 那家.地址 + "」。两条路:去上面「模型供应商」那块把它的网址改掉;" + "或者用「＋ 从名册里挑一家」或「＋ 自己填一家」再加一家专门画图的,再回这儿改拨过去。";
+}
+let 挂完的话 = null;
+function 加一个功能卡() {
+  const 卡 = el("div", { 类: "卡 素 独" });
+  const 回执 = el("div", { 类: "回执" });
+  if (挂完的话)
+    报(回执, 挂完的话.成, 挂完的话.话);
+  const 表 = el("div", { hidden: true });
+  const 开 = el("button", {
+    类: "mini",
+    title: "把一件新活挂到底座上。挂上之后,软件报这个名字就能来问底座要东西了 ——" + "要一段话的(比如写简介、起标题)和要一张图的都能挂。",
+    文: "＋ 添加功能"
+  });
+  开.addEventListener("click", () => {
+    表.hidden = false;
+    开.hidden = true;
+    名.focus();
+  });
+  const 建议 = el("datalist", { id: "已有的名字" });
+  const 见过 = new Set;
+  for (const f of 状态.功能) {
+    if (f.功能名.includes("/"))
+      continue;
+    const 族 = f.父功能 || "";
+    for (const 名 of [f.功能名, 族.includes(" · ") ? 族 : ""]) {
+      if (名 && !见过.has(名)) {
+        见过.add(名);
+        建议.appendChild(el("option", { value: 名 }));
+      }
+    }
+  }
+  const 名 = el("input", {
+    type: "text",
+    placeholder: "比如 待办 · 拟标题",
+    list: "已有的名字",
+    title: "名字前面那一截(比如「待办 · 拟标题」)叫「族名」:同一个族名开头的所有行," + "算的是同一条口能挑的那几个选项。" + "软件就是报这个名字来找底座的,所以定了之后别乱改 —— 改了软件那边会找不到。" + "跟已有的一行重名 = 改那一行,不会多出来一行。" + "点一下这个框会列出已经有的名字。"
+  });
+  const 要 = el("select", {
+    title: "选「文本」= 这个功能问 AI 要一段话;选「图像」= 要 AI 画一张图。" + "选错了在上面那张卡上改不了,得用同一个名字再存一次。"
+  });
+  要.appendChild(el("option", { value: "文本", selected: true, 文: "文本" }));
+  要.appendChild(el("option", { value: "生图", 文: "图像" }));
+  const 家 = el("select", { title: "交给哪一家去做。挂上之后用哪个模型,在它自己那张卡上改。" });
+  for (const s of 状态.供应商)
+    家.appendChild(el("option", { value: s.名, 文: s.名 }));
+  const 提醒 = el("div", { 类: "态 琥", hidden: true, 文: "⚠ 网址不像生图网址,仍可保存" });
+  const 看一眼 = () => {
+    const 那家 = 状态.供应商.find((x) => x.名 === 家.value);
+    const 该提 = 要.value === "生图" && 那家 && !像生图网址(那家.地址);
+    提醒.hidden = !该提;
+    if (该提)
+      提醒.title = 生图网址解释(那家) + " 这只是提醒,照样存得下 —— 万一那家网址长得不一样,你比这个面板清楚。";
+  };
+  要.addEventListener("change", 看一眼);
+  家.addEventListener("change", 看一眼);
+  const 拦 = UI没存拦(表);
+  const 收 = () => {
+    表.hidden = true;
+    开.hidden = false;
+    名.value = "";
+    要.value = "文本";
+    提醒.hidden = true;
+    UI填错.清全(表);
+    拦.存了();
+  };
+  const 存 = el("button", { 类: "主钮", title: "存进本机的配置库。只落在这台电脑上,不会传去别处。", 文: "保存" });
+  存.addEventListener("click", async () => {
+    if (!UI填错.查([{ 框: 名, 话: "名称不能空,接入的软件就是报这个名字来找的" }]))
+      return;
+    const 旧 = 状态.功能.find((x) => x.功能名 === 名.value.trim());
+    if (旧 && !await 问改("已经有一行叫「" + 旧.功能名 + "」,改它?", `不会多出一行,改的是原来那一行:
+现在 ` + 设定字(旧.主用供应商, 旧.主用模型) + " · " + ((旧.种类 || "文本") === "生图" ? "图像" : "文本") + `
+改成 ` + 家.value + "(模型换成它清单里第一个)· " + (要.value === "生图" ? "图像" : "文本"), "改原来那行"))
+      return;
+    存.disabled = true;
+    try {
+      const 结 = await 打("/api/feature", { 功能名: 名.value, 种类: 要.value, 供应商: 家.value });
+      if (!结.成了) {
+        报(回执, false, 结.说 || 结.错 || "没挂上");
+        return;
+      }
+      挂完的话 = { 成: true, 话: !结.新建 ? "本来就有这个名字,改的是原来那一行" : "加好了。上面能看到它了,要换模型在它那张卡上改" + (提醒.hidden ? "" : " —— 不过这一家的网址不是生图网址,画图多半会失败") };
+      收();
+      await 装();
+    } catch (e) {
+      console.error(e);
+      报(回执, false, "功能未添加 —— 检查填写后再试");
+    } finally {
+      存.disabled = false;
+    }
+  });
+  const 撤 = el("button", { 类: "mini", title: "不加了,把这个表单收起来。", 文: "取消" });
+  撤.addEventListener("click", async () => {
+    if (!await 拦.问())
+      return;
+    挂完的话 = null;
+    收();
+    回执.textContent = "";
+  });
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, 必标("名称"), 名)));
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, el("label", { 文: "类型" }), 要)));
+  表.appendChild(el("div", { 类: "行" }, el("span", { 类: "对" }, el("label", { 文: "模型供应商" }), 家)));
+  表.appendChild(提醒);
+  表.appendChild(el("div", { 类: "行" }, 存, 撤));
+  表.appendChild(建议);
+  卡.appendChild(开);
+  卡.appendChild(表);
+  卡.appendChild(回执);
+  return 卡;
+}
+function 画想过(供应商, 模型, 用力) {
+  const 盒 = el("div", {});
+  const 条 = (状态.想过 || {})[供应商 + `
+` + 模型 + `
+` + 用力];
+  if (条 && 条.想了 !== null && 条.想了 !== undefined) {
+    const 想 = 条.想了, 关着 = 用力 === 关档;
+    const 话 = 想 > 0 ? 关着 ? "⚠ 选了「关闭」,它上次照样想了 " + 想 + " 个字" : "上次它想了 " + 想 + " 个字" : 关着 ? "上次它一个字都没想" : "⚠ 选了「" + 用力 + "」,它上次一个字都没想";
+    const 解释 = 想 > 0 ? 关着 ? "这个模型没有「彻底不想」这个开关 —— 底座已经把这家能压到的最低那一档发过去了" + "(上面那行「「关闭」在这家 = …」写着发的是哪一档),它还是想了 " + 想 + " 个字," + "那部分照样花你的额度。要它再少,只能换一个本来就想得少的模型" + "(反代那边 gemini 的强度写在模型名里,比如 -lite、-low 那几个)。" : "这个数只说明它这一次想了 " + 想 + " 个字,**不说明你选的这一档起了作用** —— " + "不发这一格,有的模型照样自己想(Google 那条不发也想 967–1602 个字)。" + "要看这一档到底有没有让它想得更多,比下面「各档」那行的数。" : 关着 ? "关住了,或者这道题它本来就没想 —— 两种都不花冤枉额度。" : "上次它一个字都没想。可能是这道题它觉得不用想,也可能这个模型压根不看这一格 —— " + "一次调用分不出这两种。要弄清楚,去「全部 N 个」那张模型表上点这个模型的" + "「探档位」:它会问出这个模型认不认这一格。";
+    盒.appendChild(el("div", {
+      类: "态",
+      文: 话,
+      title: "这是 " + 条.时刻.slice(5, 16) + " 那次调用的账。" + 解释 + " 数字是这个模型自己在账单里报的,不是猜的;" + "每次真调用都会刷新,换了模型下次调用完这句话跟着变。"
+    }));
+  }
+  const 各档 = Object.entries(状态.想过 || {}).filter(([k, v]) => k.startsWith(供应商 + `
+` + 模型 + `
+`) && v.想了 !== null && v.想了 !== undefined).map(([k, v]) => ({ 档: k.split(`
+`)[2], 想: v.想了, 时: v.时刻 }));
+  if (各档.length >= 2) {
+    const 序 = [关档, "none", "minimal", "low", "medium", "high", "xhigh", "max"];
+    各档.sort((a, b) => (序.indexOf(a.档) + 1 || 99) - (序.indexOf(b.档) + 1 || 99));
+    const 串 = 各档.map((x) => (x.档 === 关档 ? "关" : x.档) + " " + x.想).join(" · ");
+    盒.appendChild(el("div", {
+      类: "态",
+      文: "各档 " + 短话(串, 22),
+      title: `这个模型在各档上**真实调用**时各想了多少字(接口自己报的账,每档取最近一次):
+` + 各档.map((x) => "· " + (x.档 === 关档 ? "关闭" : x.档) + ":" + x.想 + " 个字(" + x.时.slice(5, 16) + ")").join(`
+`) + `
+
+怎么看:两档数字接近,只能说这几次没看出差别 —— 不等于这一档没用` + "(同一档两次能差好几百个字,一次对比说明不了什么);差得多也只是说这道题上它多想了。" + "要更准就多用几次,这行会跟着刷新。没列出来的档 = 还没真用过。"
+    }));
+  }
+  return 盒;
+}
+function 画强度选项(选, 清单, 选中, 自框, 认准) {
+  选.textContent = "";
+  const 序 = 状态 && 状态.档序 || [];
+  const 全 = [关档, ...序, ...清单.filter((x) => x !== 关档 && !序.includes(x))];
+  if (选中 && !全.includes(选中))
+    全.push(选中);
+  for (const v of 全) {
+    const 认 = v === 关档 || 清单.includes(v);
+    选.appendChild(el("option", {
+      value: v,
+      selected: v === 选中,
+      disabled: !认 && v !== 选中,
+      文: (v === 关档 ? "关闭" : v) + (认 ? "" : 认准 ? "(这个模型不认)" : "(没探过)")
+    }));
+  }
+  选.appendChild(el("option", { value: 自定义, 文: "自定义…" }));
+  if (自框)
+    自框.hidden = 选.value !== 自定义;
+}
+function 短话(话, 上限) {
+  const t = (话 || "").replace(/\s+/g, " ").trim();
+  return t.length > 上限 ? t.slice(0, 上限) + "…" : t;
+}
+const 码话 = [
+  [/^HTTP 40[13]\b/, "密钥或权限不对"],
+  [/^HTTP 404\b/, "这家没有它了"],
+  [/^HTTP 429\b/, "额度用完了"],
+  [/^HTTP 4\d\d\b/, "那家服务不让连"],
+  [/^HTTP 5\d\d\b/, "对方那边出错"],
+  [/超时|没回话/, "不回话"]
+];
+function 摁的短牌(为什么) {
+  const t = (为什么 || "").trim();
+  if (!t)
+    return "已隐藏";
+  for (const [认, 话] of 码话)
+    if (认.test(t))
+      return 话;
+  return 短话(t, 16);
+}
+function 标得了眼(家, 记) {
+  return !!记 && 记.看图 === "能" && !!家 && 家.递得进图 !== false && !像生图网址(家.地址 || "");
+}
+function 画模型选项(选, 家, 选中, 自框) {
+  选.textContent = "";
+  选.classList.add("模选");
+  const 清单 = 家 && 家.模型们 || [];
+  const 笔 = new Map((家 && 家.模型笔记 || []).map((x) => [x.模型, x]));
+  const 摁了 = new Map([...笔].filter(([, x]) => x.藏了));
+  const 全 = 清单.includes(选中) || !选中 ? 清单.slice() : [选中, ...清单];
+  for (const m of 摁了.keys())
+    if (!全.includes(m))
+      全.push(m);
+  const 能选 = [], 拨不动 = [], 挡们 = new Map;
+  for (const m of 全) {
+    const 挡 = 选不了(家, m, 摁了.get(m));
+    if (挡)
+      挡们.set(m, 挡);
+    (挡 ? 拨不动 : 能选).push(m);
+  }
+  const 摆 = (筐, m) => {
+    const 挡 = 挡们.get(m);
+    const 记 = 笔.get(m) || {};
+    const 尾 = [记.备注, 记.判断].filter((x) => (x || "").trim()).join(" · ");
+    const 标图 = 标得了眼(家, 记);
+    const 秒 = 记.测速毫秒 == null ? "" : (记.测速毫秒 / 1000).toFixed(1) + " 秒";
+    筐.appendChild(el("option", {
+      value: m,
+      selected: m === 选中,
+      disabled: !!挡 && m !== 选中,
+      title: [
+        挡 ? 挡.话 + (挡.出路 ? " " + 挡.出路 : "") : "",
+        标图 ? "能看图" : "",
+        秒 ? "上次测试用时 " + 秒 : "",
+        尾
+      ].filter(Boolean).join("  "),
+      文: m + (标图 ? " \uD83D\uDC41" : "") + (秒 ? "  ⏱ " + 秒 : "") + (挡 ? "  " + 挡.牌 : "") + (尾 ? " — " + 短话(尾, 44) : "")
+    }));
+  };
+  if (能选.length) {
+    const 组 = el("optgroup", { label: "可选(" + 能选.length + " 个)" });
+    能选.forEach((m) => 摆(组, m));
+    选.appendChild(组);
+  }
+  if (拨不动.length) {
+    const 组 = el("optgroup", { label: "不可选(" + 拨不动.length + " 个)" });
+    拨不动.forEach((m) => 摆(组, m));
+    选.appendChild(组);
+  }
+  选.appendChild(el("option", { value: 自定义, 文: "自定义…" }));
+  if (!全.length)
+    选.value = 自定义;
+  if (自框)
+    自框.hidden = 选.value !== 自定义;
+  够多就搜(选);
+}
+async function 刷日志() {
+  const 序号 = ++日志请求序号;
+  const 新状态 = await 取面板配置(() => 序号 === 日志请求序号, 刷日志);
+  if (!新状态 || 序号 !== 日志请求序号)
+    return;
+  for (const 键 of ["日志", "日志总数", "汇总", "想过"]) {
+    if (Object.prototype.hasOwnProperty.call(新状态, 键))
+      状态[键] = 新状态[键];
+  }
+  画统计();
+  画日志();
+  if (状态.安装范围?.已知 && 新状态.安装范围?.已知 && JSON.stringify(状态.安装范围.功能名) === JSON.stringify(新状态.安装范围.功能名)) {
+    状态.安装范围.已调用 = !!新状态.安装范围.已调用;
+    状态.安装范围.已成功调用 = !!新状态.安装范围.已成功调用;
+  }
+  画开场();
+}
+let 日志分页 = null, 日志分页壳 = null, 日志更新 = null, 日志更新壳 = null;
+function 日志零件() {
+  if (日志分页)
+    return;
+  日志分页壳 = el("nav", { "aria-label": "调用记录分页" });
+  日志分页 = UI分页(日志分页壳, { 键: "日志页", 变: (页) => 翻日志(页) });
+  日志更新壳 = el("span");
+  日志更新 = UI更新于(日志更新壳, { 刷: () => 装() });
+}
+function 日志表(行们) {
+  const 表 = el("table", { 类: "日志表" });
+  表.appendChild(el("thead", {}, el("tr", {}, el("th", { "data-列": "ID", title: "这一次调用的编号:记下来那一刻程序发的,按先后往上涨。", 文: "ID" }), ...["时刻", "功能", "供应商 / 模型", "结果"].map((字) => el("th", { "data-列": 字, 文: 字 })))));
+  const 身 = 表.appendChild(el("tbody"));
+  for (const g of 行们) {
+    身.appendChild(el("tr", {}, el("td", { 类: "号格", 文: g.ID || "—" }), el("td", { 类: "时", title: g.时刻, 文: (g.时刻 || "").slice(0, 16) }), el("td", { 文: g.功能 }), el("td", { 文: g.用了谁 + " / " + g.模型 }), el("td", {
+      类: g.成没成 ? "蓝" : "红 错",
+      title: g.成没成 ? "这次成了。" + (g.想了 === null || g.想了 === undefined ? "这一家不报「想了多少」,所以看不出它有没有在思考。" : g.想了 > 0 ? "其中 " + g.想了 + " 个字花在它自己想上,那部分照样算额度。" : "它一个字都没想,直接答的。") : "报错原文:" + (g.报错原文 || "(没记下来)"),
+      文: (g.成没成 ? "✓ 成 " : "✗ 败 ") + (g.耗时毫秒 / 1000).toFixed(1) + " 秒" + (g.想了 ? " · 想 " + g.想了 + " 字" : "")
+    })));
+  }
+  return el("div", { 类: "表框外" }, el("div", { 类: "表框" }, 表));
+}
+async function 复制日志报错(钮, 全文) {
+  try {
+    await navigator.clipboard.writeText(全文);
+  } catch (e) {
+    const 临 = el("textarea", {});
+    临.value = 全文;
+    临.style.position = "fixed";
+    临.style.left = "-9999px";
+    document.body.appendChild(临);
+    临.select();
+    document.execCommand("copy");
+    临.remove();
+  }
+  钮.textContent = "✓ 已复制";
+  setTimeout(() => {
+    钮.textContent = "⧉ 复制报错";
+  }, 2000);
+}
+async function 取面板配置(仍有效, 重试) {
+  let 数;
+  try {
+    const 回 = await fetch("/api/state");
+    数 = await 回.json();
+    if (!仍有效())
+      return null;
+    if (!回.ok || 数.错)
+      throw new Error(数.错 || "HTTP " + 回.status);
+    if (!Array.isArray(数.供应商) || !Array.isArray(数.功能) || !Array.isArray(数.日志)) {
+      throw new Error("配置回包格式不对");
+    }
+    document.getElementById("配置报错位").textContent = "";
+    document.body.classList.remove("配置没读出");
+    return 数;
+  } catch (错) {
+    if (仍有效())
+      画配置报错(数, 错, 重试);
+    return null;
+  }
+}
+function 画配置报错(数, 错, 重试) {
+  const 话 = 数?.接口 && 数.接口 !== "/api/state" ? "面板操作没成功，重试或复制报错" : "面板读不了设置，重试或复制报错";
+  const 号 = 数?.错误号 || "STATE-" + Date.now().toString(36).toUpperCase();
+  const 原 = 数?.报错类名 ? 数.报错类名 + "（原文由服务端按错误号保留）" : 错.stack || 错.message || String(错);
+  const 全文 = 话 + `
+原始报错:` + 原 + `
+位置:` + (数?.接口 || "/api/state") + `
+时间:` + (数?.时间 || new Date().toISOString()) + `
+错误号:` + 号;
+  const 复 = el("button", { 类: "mini", 文: "⧉ 复制报错" });
+  复.addEventListener("click", () => 复制日志报错(复, 全文));
+  const 再 = el("button", { 类: "mini", 文: "重试" });
+  再.addEventListener("click", 重试);
+  const 位 = document.getElementById("配置报错位");
+  位.textContent = "";
+  if (!状态.供应商.length && !状态.功能.length)
+    document.body.classList.add("配置没读出");
+  位.appendChild(el("div", { id: "配置报错", 类: "卡 调用记录错" }, el("div", {}, el("i", { 类: "符 坏", 文: "✗" }), el("span", { 文: " " + 话 })), el("div", { 类: "表条" }, 再, 复)));
+}
+function 画日志报错(错, 重试) {
+  const 筐 = document.getElementById("日志");
+  筐.textContent = "";
+  const 号 = "LOGS-" + Date.now().toString(36).toUpperCase();
+  const 原 = 错 && (错.stack || 错.message) ? 错.stack || 错.message : String(错 || "未知错误");
+  const 全文 = `调用记录没取到,点重试
+原始报错:` + 原 + `
+位置:/api/logs
+时间:` + new Date().toISOString() + `
+错误号:` + 号;
+  const 复 = el("button", { 类: "mini", 文: "⧉ 复制报错" });
+  复.addEventListener("click", () => 复制日志报错(复, 全文));
+  const 再 = el("button", { 类: "mini", 文: "重试" });
+  再.addEventListener("click", 重试);
+  筐.appendChild(el("div", { 类: "调用记录错" }, el("div", {}, el("i", { 类: "符 坏", 文: "✗" }), el("span", { 文: " 调用记录没取到,点重试" })), el("div", { 类: "表条" }, 再, 复)));
+}
+let 日志序 = 0;
+let 日志功能名 = "", 日志只看失败 = false, 日志筛选总数 = null;
+function 日志筛选参数() {
+  return new URLSearchParams({ 功能名: 日志功能名, 只看失败: 日志只看失败 ? "1" : "0" });
+}
+async function 翻日志(页) {
+  日志零件();
+  const 每页 = 日志分页.每页;
+  const 号 = ++日志序;
+  try {
+    const 问 = 日志筛选参数();
+    问.set("跳过", String((页 - 1) * 每页));
+    问.set("条数", String(每页));
+    const r = await fetch("/api/logs?" + 问.toString());
+    const 文 = await r.text();
+    let 数;
+    try {
+      数 = JSON.parse(文);
+    } catch (e) {
+      数 = null;
+    }
+    if (号 !== 日志序)
+      return;
+    if (!r.ok || !数 || !Array.isArray(数.日志))
+      throw new Error(数 && 数.错 || 文 || "HTTP " + r.status);
+    日志筛选总数 = Number(数.总数);
+    日志分页.设共(日志筛选总数);
+    if (日志分页.页 !== 页)
+      return;
+    画日志(数.日志, 页);
+  } catch (e) {
+    if (号 !== 日志序)
+      return;
+    console.error(e);
+    画日志报错(e, () => 翻日志(页));
+  }
+}
+function 画日志(行们 = null, 页 = 1) {
+  日志零件();
+  日志序++;
+  if (行们 === null) {
+    日志筛选总数 = null;
+    if (日志功能名 || 日志只看失败 || 日志分页.页 > 1)
+      return 翻日志(日志分页.页);
+  }
+  const 筐 = document.getElementById("日志");
+  筐.textContent = "";
+  const 总数 = Number(日志筛选总数 ?? 状态.日志总数 ?? 状态.日志.length);
+  日志分页.设共(总数);
+  if (!行们)
+    行们 = 状态.日志.slice(0, 日志分页.每页);
+  日志更新.设();
+  const 侧数 = document.getElementById("侧日志数");
+  if (侧数)
+    侧数.textContent = UI格式.数(总数) + " 条";
+  const 功能 = el("select", { "aria-label": "功能" });
+  功能.appendChild(el("option", { value: "", selected: !日志功能名, 文: "全部" }));
+  for (const f of 状态.功能) {
+    功能.appendChild(el("option", { value: f.功能名, selected: f.功能名 === 日志功能名, 文: f.功能名 }));
+  }
+  const 失败 = el("input", { type: "checkbox", checked: 日志只看失败 });
+  const 改筛选 = () => {
+    日志功能名 = 功能.value;
+    日志只看失败 = 失败.checked;
+    日志筛选总数 = null;
+    导.href = "/api/logs.csv?" + 日志筛选参数().toString();
+    if (日志分页.页 !== 1)
+      日志分页.到(1);
+    else
+      翻日志(1);
+  };
+  功能.addEventListener("change", 改筛选);
+  失败.addEventListener("change", 改筛选);
+  const 导 = el("a", { 类: "mini", href: "/api/logs.csv?" + 日志筛选参数().toString(), download: "", 文: "⤓ 导出 CSV" });
+  筐.appendChild(el("div", { 类: "表条 调用记录条" }, el("strong", { 类: "表名", 文: "调用记录 · 共 " + UI格式.数(总数) + " 条" }), el("label", {}, el("span", { 文: "功能" }), 功能), el("label", {}, 失败, el("span", { 文: "只看失败" })), 导, 恢复宽钮(["aibase-日志表"], "点这颗把调用记录表的列宽放回原样。"), 日志更新壳));
+  if (!总数) {
+    筐.appendChild(el("div", { 类: "空", 文: 日志功能名 || 日志只看失败 ? "没有符合筛选条件的调用记录。" : "暂无调用记录。点任一功能的「测试」后出现。" }));
+  } else {
+    const 表框 = 日志表(行们);
+    筐.appendChild(表框);
+    接列宽(表框.querySelector("table"), "aibase-日志表");
+  }
+  筐.appendChild(日志分页壳);
+}
+装();
+</script>
+<script src="表格.js"></script>
+<script src="模型更新.js"></script>
+<script src="按供应商.js"></script>
+</body>
+</html>

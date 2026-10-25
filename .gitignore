@@ -1,0 +1,4 @@
+数据/
+*.db
+.ai_base
+__pycache__/
